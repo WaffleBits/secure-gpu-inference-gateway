@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from gateway.audit import JsonlAuditSink
+from gateway.metrics import GatewayMetrics
 from gateway.mock_inference import run_mock_inference
 from gateway.models import AuditEvent
 from gateway.policy import evaluate_policy
@@ -32,11 +33,20 @@ app = FastAPI(
 
 rate_limiter = FixedWindowRateLimiter()
 audit_sink = JsonlAuditSink()
+metrics = GatewayMetrics()
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/metrics")
+def prometheus_metrics() -> Response:
+    return Response(
+        metrics.render_prometheus(MODEL_POLICIES),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )
 
 
 @app.get("/v1/models")
@@ -64,6 +74,7 @@ def infer(
     decision = evaluate_policy(principal, model_policy, request.reason)
 
     if not decision.allowed:
+        metrics.record_request(model_id, "policy_denied", decision.reasons)
         audit_sink.write(
             AuditEvent(
                 principal_id=x_principal_id or "unknown",
@@ -79,6 +90,7 @@ def infer(
     assert model_policy is not None
 
     if not rate_limiter.allow(principal.principal_id, model_id, model_policy.requests_per_minute):
+        metrics.record_request(model_id, "rate_limited", ("rate limit exceeded",))
         audit_sink.write(
             AuditEvent(
                 principal_id=principal.principal_id,
@@ -91,6 +103,9 @@ def infer(
         raise HTTPException(status_code=429, detail="rate limit exceeded")
 
     result = run_mock_inference(model_id, request.input)
+    latency_ms = float(result["latency_ms"])
+    metrics.record_request(model_id, "allowed")
+    metrics.observe_latency(model_id, latency_ms / 1000)
     audit_sink.write(
         AuditEvent(
             principal_id=principal.principal_id,
@@ -98,14 +113,14 @@ def infer(
             allowed=True,
             reason=request.reason,
             decision_reasons=decision.reasons,
-            latency_ms=float(result["latency_ms"]),
+            latency_ms=latency_ms,
         )
     )
 
     return InferenceResponse(
         model_id=str(result["model_id"]),
         output=str(result["output"]),
-        latency_ms=float(result["latency_ms"]),
+        latency_ms=latency_ms,
         backend=str(result["backend"]),
         audit={
             "principal_id": principal.principal_id,
@@ -113,4 +128,3 @@ def infer(
             "decision_reasons": decision.reasons,
         },
     )
-

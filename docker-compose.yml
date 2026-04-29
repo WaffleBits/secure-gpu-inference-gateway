@@ -4,5 +4,4 @@ services:
     ports:
       - "8000:8000"
     environment:
-      AUDIT_LOG_PATH: /app/audit.log
-
+      AUDIT_LOG_PATH: /var/log/gateway/audit.log
