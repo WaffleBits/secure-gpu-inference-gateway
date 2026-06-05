@@ -23,6 +23,7 @@ class GatewayMetrics:
         self.latency_buckets = tuple(sorted(latency_buckets))
         self._requests: Counter[tuple[str, str]] = Counter()
         self._denials: Counter[tuple[str, str]] = Counter()
+        self._auth_events: Counter[tuple[str, str]] = Counter()
         self._latency_buckets: Counter[tuple[str, float]] = Counter()
         self._latency_count: Counter[str] = Counter()
         self._latency_sum: Counter[str] = Counter()
@@ -41,6 +42,10 @@ class GatewayMetrics:
                 for reason in reasons:
                     self._denials[(model_id, reason)] += 1
 
+    def record_auth_event(self, auth_method: str, outcome: str) -> None:
+        with self._lock:
+            self._auth_events[(auth_method, outcome)] += 1
+
     def observe_latency(self, model_id: str, latency_seconds: float) -> None:
         with self._lock:
             self._latency_count[model_id] += 1
@@ -55,6 +60,7 @@ class GatewayMetrics:
                 *self._model_policy_samples(model_policies),
                 *self._request_samples(),
                 *self._denial_samples(),
+                *self._auth_samples(),
                 *self._latency_samples(),
             ]
 
@@ -79,6 +85,13 @@ class GatewayMetrics:
                 sample
                 for sample in samples
                 if sample.name == "security_gateway_denials_total"
+            ),
+            "# HELP security_gateway_auth_events_total Authentication attempts by method and outcome.",
+            "# TYPE security_gateway_auth_events_total counter",
+            *format_samples(
+                sample
+                for sample in samples
+                if sample.name == "security_gateway_auth_events_total"
             ),
             "# HELP security_gateway_inference_latency_seconds Mock inference latency histogram.",
             "# TYPE security_gateway_inference_latency_seconds histogram",
@@ -124,6 +137,16 @@ class GatewayMetrics:
                 count,
             )
             for (model_id, reason), count in sorted(self._denials.items())
+        ]
+
+    def _auth_samples(self) -> list[MetricSample]:
+        return [
+            MetricSample(
+                "security_gateway_auth_events_total",
+                {"auth_method": auth_method, "outcome": outcome},
+                count,
+            )
+            for (auth_method, outcome), count in sorted(self._auth_events.items())
         ]
 
     def _latency_samples(self) -> list[MetricSample]:

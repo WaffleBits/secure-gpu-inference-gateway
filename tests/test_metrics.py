@@ -15,6 +15,7 @@ class MetricsTest(unittest.TestCase):
             "policy_denied",
             ("principal lacks an allowed role for this model",),
         )
+        metrics.record_auth_event("jwt", "accepted")
 
         rendered = metrics.render_prometheus(MODEL_POLICIES)
 
@@ -28,6 +29,10 @@ class MetricsTest(unittest.TestCase):
         )
         self.assertIn(
             'security_gateway_denials_total{model_id="threat-triage",reason="principal lacks an allowed role for this model"} 1',
+            rendered,
+        )
+        self.assertIn(
+            'security_gateway_auth_events_total{auth_method="jwt",outcome="accepted"} 1',
             rendered,
         )
         self.assertIn(
