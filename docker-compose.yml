@@ -5,3 +5,4 @@ services:
       - "8000:8000"
     environment:
       AUDIT_LOG_PATH: /var/log/gateway/audit.log
+      ALLOW_DEMO_PRINCIPALS: "true"
