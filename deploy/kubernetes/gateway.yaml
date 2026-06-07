@@ -10,6 +10,9 @@ metadata:
   namespace: secure-gpu-inference
 data:
   AUDIT_LOG_PATH: /var/log/gateway/audit.log
+  OIDC_ISSUER: https://issuer.example.com
+  OIDC_AUDIENCE: secure-gpu-inference-gateway
+  ALLOW_DEMO_PRINCIPALS: "false"
   PYTHONDONTWRITEBYTECODE: "1"
 ---
 apiVersion: apps/v1
@@ -49,6 +52,13 @@ spec:
           envFrom:
             - configMapRef:
                 name: gateway-config
+          env:
+            - name: OIDC_JWT_HS256_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: gateway-oidc
+                  key: jwt-hs256-secret
+                  optional: true
           readinessProbe:
             httpGet:
               path: /health

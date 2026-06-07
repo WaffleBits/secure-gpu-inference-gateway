@@ -1,6 +1,6 @@
 # Secure GPU Inference Gateway
 
-Security-focused AI infrastructure demo for authenticated model access, role-based authorization, per-model rate limits, audit logs, and policy-driven inference routing.
+Security-focused AI infrastructure demo for OIDC/JWT-authenticated model access, role-based authorization, per-model rate limits, trace-aware audit logs, and policy-driven inference routing.
 
 This repository uses a mock inference backend so the security and infrastructure logic can be reviewed without GPU hardware, model weights, proprietary data, or cloud credentials.
 
@@ -11,11 +11,13 @@ AI infrastructure teams need more than a model endpoint. They need controls arou
 ## Features
 
 - FastAPI inference gateway.
-- Demo principals and role-based model policies.
+- OIDC-style bearer JWT validation with issuer, audience, expiry, and role-claim checks.
+- Demo principals and role-based model policies for local review.
 - Reason-for-access enforcement for sensitive models.
 - Fixed-window rate limiting by principal and model.
-- Structured JSONL audit logging.
-- Prometheus-compatible `/metrics` endpoint for policy, limiter, and latency telemetry.
+- Structured JSONL audit logging with authentication and trace context evidence.
+- W3C `traceparent` propagation for OpenTelemetry-compatible request correlation.
+- Prometheus-compatible `/metrics` endpoint for authentication, policy, limiter, and latency telemetry.
 - Mock GPU inference backend with latency metadata.
 - Focused unit tests for policy and limiter behavior.
 - Threat model and architecture notes.
@@ -28,7 +30,7 @@ This repo implements controls around model access, explains why a request was al
 
 Relevant areas:
 
-- Security infrastructure: authentication boundaries, authorization policy, audit trails, rate limits, and threat modeling.
+- Security infrastructure: OIDC/JWT authentication boundaries, authorization policy, audit trails, rate limits, and threat modeling.
 - AI platform engineering: protected inference paths, model routing extension points, mockable backends, and operational metadata.
 - Infrastructure/SRE: Prometheus-style metrics, health probes, SLO notes, runbooks, and Kubernetes deployment shape.
 - Backend engineering: FastAPI service structure, focused tests, clear module boundaries, and production-control roadmap.
@@ -36,10 +38,12 @@ Relevant areas:
 ## Reviewer Fast Path
 
 - Start with `gateway/app.py` for request orchestration.
+- Review `gateway/identity.py` for bearer JWT verification and demo-principal fallback controls.
 - Review `gateway/policy.py` for role and reason-for-access decisions.
 - Review `gateway/rate_limit.py` for limiter behavior.
 - Review `gateway/metrics.py` and `/metrics` for Prometheus-compatible operational telemetry.
 - Review `gateway/audit.py` for structured evidence.
+- Review `gateway/trace_context.py` for W3C trace context parsing and response propagation.
 - Review `docs/OPERATIONS.md` and `deploy/kubernetes/gateway.yaml` for SLO/runbook and deployment thinking.
 - Check `tests/` for behavior-focused coverage.
 - Read `docs/PORTFOLIO_REVIEW.md` for the role-specific review guide.
@@ -74,6 +78,17 @@ curl -X POST http://localhost:8000/v1/infer/mission-summarizer \
   -d "{\"input\":\"Summarize synthetic maintenance delays\", \"reason\":\"readiness review\"}"
 ```
 
+The local demo header is enabled by default for reviewer convenience. To exercise the JWT path, set:
+
+```bash
+set OIDC_ISSUER=https://issuer.example.com
+set OIDC_AUDIENCE=secure-gpu-inference-gateway
+set OIDC_JWT_HS256_SECRET=local-review-secret
+set ALLOW_DEMO_PRINCIPALS=false
+```
+
+Then send an `Authorization: Bearer <token>` header with `sub`, `iss`, `aud`, `exp`, and a `roles` or `scope` claim matching the target model policy. The verifier uses HS256 for public-safe local testing; production OIDC deployments should use JWKS-backed asymmetric signing and key rotation.
+
 ## Test
 
 ```bash
@@ -86,16 +101,18 @@ This project covers:
 
 - Access-control thinking around model-serving systems.
 - Public-safe audit and policy design.
-- Prometheus-compatible metrics for policy denials, rate limits, and inference latency.
+- Issuer-bound JWT validation, role claim mapping, and demo-auth disablement.
+- W3C trace context propagation for request correlation across a model-serving control plane.
+- Prometheus-compatible metrics for authentication outcomes, policy denials, rate limits, and inference latency.
 - Kubernetes-ready health probes, scrape annotations, and non-root runtime posture.
 - Backend service design with clear separation between API, policy, rate limiting, and inference.
-- A credible path toward production controls such as OIDC, mTLS, external policy engines, GPU telemetry, and model routing.
+- A credible path toward production controls such as JWKS key rotation, mTLS, external policy engines, GPU telemetry, and model routing.
 
 ## Gaps Worth Closing Next
 
-- Replace demo principals with OIDC/JWT verification.
+- Replace local HS256 review tokens with JWKS-backed OIDC key rotation.
 - Add Redis-backed or gateway-level distributed rate limiting.
-- Add OpenTelemetry traces and Grafana dashboard screenshots.
+- Add full OpenTelemetry SDK export and Grafana dashboard screenshots.
 - Add policy-as-code examples and negative authorization tests.
 - Replace the `emptyDir` demo audit volume with durable log shipping or object storage retention.
 
