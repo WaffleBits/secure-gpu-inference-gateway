@@ -34,4 +34,9 @@ class AuditEvent:
     reason: str | None
     decision_reasons: tuple[str, ...]
     latency_ms: float | None = None
-
+    auth_method: str | None = None
+    auth_subject: str | None = None
+    auth_issuer: str | None = None
+    trace_id: str | None = None
+    span_id: str | None = None
+    parent_span_id: str | None = None
