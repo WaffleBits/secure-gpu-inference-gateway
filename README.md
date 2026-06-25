@@ -8,6 +8,8 @@ This repository uses a mock inference backend so the security and infrastructure
 
 AI infrastructure teams need more than a model endpoint. They need controls around who can call which model, why the call is allowed, how abuse is throttled, and what evidence exists after the fact. This project models that control plane in a public-safe way.
 
+This is the flagship portfolio project for the platform-security-to-AI-infrastructure lane. It is meant to demonstrate security software around model-serving systems: identity, authorization, policy decisions, audit evidence, rate limits, observability, deployment posture, and a credible roadmap toward redaction, policy-as-code, supply-chain checks, and compliance evidence automation.
+
 ## Features
 
 - FastAPI inference gateway.
@@ -47,6 +49,7 @@ Relevant areas:
 - Review `docs/OPERATIONS.md` and `deploy/kubernetes/gateway.yaml` for SLO/runbook and deployment thinking.
 - Check `tests/` for behavior-focused coverage.
 - Read `docs/PORTFOLIO_REVIEW.md` for the role-specific review guide.
+- Read `ROADMAP.md` for the next build path toward a secure AI / cloud governance platform.
 
 ## Quick Start
 
@@ -113,7 +116,9 @@ This project covers:
 - Replace local HS256 review tokens with JWKS-backed OIDC key rotation.
 - Add Redis-backed or gateway-level distributed rate limiting.
 - Add full OpenTelemetry SDK export and Grafana dashboard screenshots.
-- Add policy-as-code examples and negative authorization tests.
+- Add policy-as-code examples, redaction controls, and negative authorization tests.
+- Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
+- Add SOC2/FedRAMP-inspired control mapping notes without claiming certification or production authorization.
 - Replace the `emptyDir` demo audit volume with durable log shipping or object storage retention.
 
 ## Public-Safe Scope
