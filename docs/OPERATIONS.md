@@ -9,6 +9,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Policy correctness: 100% of denied requests include a structured decision reason in audit logs and metrics.
 - Audit durability: every allowed, policy-denied, and rate-limited inference request writes one audit event.
 - Traceability: every inference response and audit event carries a trace ID for request correlation.
+- Trace privacy: optional trace exports omit prompt text, generated output, access reason, subject, and principal ID.
 
 ## Metrics
 
@@ -19,6 +20,24 @@ The `/metrics` endpoint exposes Prometheus-compatible text output without requir
 - `security_gateway_requests_total`: inference requests by `model_id` and `outcome`.
 - `security_gateway_denials_total`: denied requests by `model_id` and policy or limiter reason.
 - `security_gateway_inference_latency_seconds`: histogram, count, and sum for successful mock inference calls.
+
+## Trace Export
+
+Set `TRACE_EXPORT_PATH` or `OTEL_TRACE_EXPORT_PATH` to write one sanitized JSONL span per inference request. The exported record is OpenTelemetry-shaped for local review: service name, route, trace ID, span ID, parent span ID, outcome, auth method, model ID, and latency. It deliberately omits payload and identity fields that do not belong in public observability evidence.
+
+The checked example in `artifacts/sanitized-trace-evidence.jsonl` shows the expected shape. `tests/test_trace_exporter.py` covers the privacy boundary.
+
+## Local Dashboard
+
+`docker compose up --build` starts the gateway, Prometheus, and Grafana with the dashboard provisioned from `deploy/grafana/dashboards/security-gateway.json`.
+
+Dashboard panels cover:
+
+- request rate by outcome;
+- p95 latency by model;
+- authentication outcome rate;
+- denial counts by model and reason;
+- configured model-policy metadata.
 
 ## Alert Candidates
 
@@ -52,8 +71,9 @@ The `/metrics` endpoint exposes Prometheus-compatible text output without requir
 
 1. Confirm responses include a `traceparent` header.
 2. Check audit events for `trace_id`, `span_id`, and `parent_span_id`.
-3. Verify upstream clients are forwarding a valid W3C `traceparent` header.
-4. If missing, the gateway generates trace IDs; correlate from gateway audit outward.
+3. If `TRACE_EXPORT_PATH` is set, check the sanitized trace JSONL for the same `trace_id`.
+4. Verify upstream clients are forwarding a valid W3C `traceparent` header.
+5. If missing, the gateway generates trace IDs; correlate from gateway audit outward.
 
 ### Rate Limit Spike
 
@@ -80,3 +100,4 @@ The `/metrics` endpoint exposes Prometheus-compatible text output without requir
 - The audit log path must be writable by the container user.
 - Kubernetes readiness and liveness probes should target `/health`.
 - Prometheus should scrape `/metrics` on port 8000.
+- Optional trace export path must point at a writable location and must not be treated as a prompt or output sink.

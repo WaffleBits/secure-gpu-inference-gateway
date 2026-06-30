@@ -9,6 +9,7 @@ flowchart LR
     API --> Limiter["Rate Limiter"]
     API --> Model["Mock Inference Backend"]
     API --> Audit["JSONL Audit Sink"]
+    API --> TraceExport["Sanitized Trace Export"]
 ```
 
 ## Components
@@ -19,8 +20,10 @@ flowchart LR
 - `gateway/policy.py`: role and reason-for-access decisions.
 - `gateway/rate_limit.py`: in-memory fixed-window rate limiter.
 - `gateway/audit.py`: structured JSONL audit events with identity and trace evidence.
+- `gateway/trace_exporter.py`: opt-in sanitized trace spans for local OpenTelemetry-shaped evidence.
 - `gateway/mock_inference.py`: synthetic model response with latency metadata.
 - `gateway/registry.py`: demo principals and model policies.
+- `deploy/prometheus` and `deploy/grafana`: local metrics scrape and dashboard provisioning.
 
 ## Production Extensions
 
@@ -28,6 +31,6 @@ flowchart LR
 - Add mTLS between gateway and model backends.
 - Move policy definitions to OPA, Cedar, or a signed config bundle.
 - Replace in-memory rate limiting with Redis or Envoy global rate limits.
-- Export OpenTelemetry spans to an OTLP collector and keep Prometheus metrics for low-cardinality service health.
+- Upgrade sanitized trace JSONL to OpenTelemetry SDK export through an OTLP collector while keeping Prometheus metrics for low-cardinality service health.
 - Capture GPU telemetry from DCGM and attach it to inference metrics.
 - Add per-model data handling rules and prompt/output redaction.
