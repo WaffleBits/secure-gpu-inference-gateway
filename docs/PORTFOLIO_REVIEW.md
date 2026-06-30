@@ -11,7 +11,9 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - `gateway/rate_limit.py`: fixed-window limiter behavior by principal and model.
 - `gateway/metrics.py`: Prometheus-compatible authentication, policy, limiter, and latency samples.
 - `gateway/audit.py`: structured JSONL evidence for allowed and denied requests with auth and trace fields.
+- `gateway/trace_exporter.py`: sanitized trace span export for local observability evidence.
 - `gateway/mock_inference.py`: reviewable model-serving boundary without private models or GPU hardware.
+- `deploy/grafana/dashboards/security-gateway.json`: dashboard queries for request outcomes, latency, auth, denial, and model policy review.
 - `docs/OPERATIONS.md`: SLOs, alert candidates, and incident runbooks.
 - `ROADMAP.md`: secure AI / cloud governance roadmap for policy-as-code, redaction, supply-chain evidence, telemetry, and control mapping.
 - `deploy/kubernetes/gateway.yaml`: health probes, non-root container posture, and scrape annotations.
@@ -25,6 +27,8 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Preserving audit evidence and trace IDs without exposing sensitive prompts, users, or model outputs.
 - Exposing model-serving control-plane metrics that support SRE review.
 - Handling request correlation through OpenTelemetry-compatible W3C trace context.
+- Exporting sanitized trace evidence that keeps prompt, output, access-reason, subject, and principal identifiers out of observability artifacts.
+- Providing Prometheus/Grafana review files that turn gateway metrics into operational panels.
 - Designing a mockable inference boundary that can later route to real model-serving backends.
 - Showing Kubernetes deployment thinking without requiring cloud credentials.
 - Keeping the next-build path focused on platform security and AI infrastructure controls instead of generic dashboard work.
@@ -41,7 +45,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 
 - Add JWKS-backed OIDC key rotation examples.
 - Add mTLS notes for gateway-to-backend communication.
-- Add full OpenTelemetry SDK export and dashboard screenshots.
+- Upgrade the local trace JSONL proof into full OpenTelemetry SDK export through an OTLP collector and capture dashboard screenshots from synthetic traffic.
 - Add policy-as-code and redaction examples with positive and negative test cases.
 - Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
 - Add SOC2/FedRAMP-inspired control mapping notes without implying certification or production authorization.

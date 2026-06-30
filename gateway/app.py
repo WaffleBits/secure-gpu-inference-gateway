@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from time import time_ns
+
 from fastapi import FastAPI, Header, HTTPException, Response
 from pydantic import BaseModel, Field
 
@@ -12,6 +14,7 @@ from gateway.policy import evaluate_policy
 from gateway.rate_limit import FixedWindowRateLimiter
 from gateway.registry import MODEL_POLICIES
 from gateway.trace_context import RequestTrace, format_traceparent, resolve_trace_context
+from gateway.trace_exporter import JsonlTraceExporter
 
 
 class InferenceRequest(BaseModel):
@@ -38,6 +41,7 @@ rate_limiter = FixedWindowRateLimiter()
 audit_sink = JsonlAuditSink()
 metrics = GatewayMetrics()
 auth_settings = AuthSettings.from_env()
+trace_exporter = JsonlTraceExporter.from_env()
 
 
 @app.get("/health")
@@ -76,6 +80,7 @@ def infer(
     authorization: str | None = Header(default=None),
     traceparent: str | None = Header(default=None),
 ) -> InferenceResponse:
+    started_at_unix_nano = time_ns()
     trace = resolve_trace_context(traceparent)
     response.headers["traceparent"] = format_traceparent(trace)
     resolved = resolve_principal(authorization, x_principal_id, auth_settings)
@@ -100,6 +105,15 @@ def infer(
                 decision_reasons=decision_reasons,
             )
         )
+        export_trace_span(
+            trace,
+            model_id=model_id,
+            outcome="policy_denied",
+            auth_method=resolved.auth_method,
+            decision_reasons=decision_reasons,
+            latency_ms=None,
+            started_at_unix_nano=started_at_unix_nano,
+        )
         raise HTTPException(
             status_code=403,
             detail={"reasons": decision_reasons, "trace_id": trace.trace_id},
@@ -120,6 +134,15 @@ def infer(
                 reason=request.reason,
                 decision_reasons=("rate limit exceeded",),
             )
+        )
+        export_trace_span(
+            trace,
+            model_id=model_id,
+            outcome="rate_limited",
+            auth_method=resolved.auth_method,
+            decision_reasons=("rate limit exceeded",),
+            latency_ms=None,
+            started_at_unix_nano=started_at_unix_nano,
         )
         raise HTTPException(
             status_code=429,
@@ -142,6 +165,15 @@ def infer(
             latency_ms=latency_ms,
         )
     )
+    export_trace_span(
+        trace,
+        model_id=model_id,
+        outcome="allowed",
+        auth_method=resolved.auth_method,
+        decision_reasons=decision.reasons,
+        latency_ms=latency_ms,
+        started_at_unix_nano=started_at_unix_nano,
+    )
 
     return InferenceResponse(
         model_id=str(result["model_id"]),
@@ -157,6 +189,31 @@ def infer(
             "trace_id": trace.trace_id,
             "span_id": trace.span_id,
         },
+        )
+
+
+def export_trace_span(
+    trace: RequestTrace,
+    *,
+    model_id: str,
+    outcome: str,
+    auth_method: str,
+    decision_reasons: tuple[str, ...],
+    latency_ms: float | None,
+    started_at_unix_nano: int,
+) -> None:
+    if trace_exporter is None:
+        return
+
+    trace_exporter.write_span(
+        trace,
+        model_id=model_id,
+        outcome=outcome,
+        auth_method=auth_method,
+        decision_reasons=decision_reasons,
+        latency_ms=latency_ms,
+        started_at_unix_nano=started_at_unix_nano,
+        ended_at_unix_nano=time_ns(),
     )
 
 
