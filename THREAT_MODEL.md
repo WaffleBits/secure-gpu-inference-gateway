@@ -28,8 +28,9 @@
 - Requests are rate-limited by principal and model.
 - Allow and deny decisions are written to an audit log with authentication method and trace IDs.
 - W3C trace context is accepted and propagated so failures can be traced across service boundaries.
+- Optional trace export writes sanitized span evidence without prompt text, model outputs, access reason, subject, or principal ID.
 - The mock backend avoids real model weights or data.
 
 ## Residual Risk
 
-This is a demo. Production deployments should add JWKS-backed OIDC key rotation, centralized policy, durable audit storage, secrets management, network controls, dependency scanning, full OpenTelemetry export, and SLO-driven monitoring.
+This is a demo. Production deployments should add JWKS-backed OIDC key rotation, centralized policy, durable audit storage, secrets management, network controls, dependency scanning, OpenTelemetry SDK export through an OTLP collector, and SLO-driven monitoring.
