@@ -6,7 +6,8 @@ flowchart LR
     API --> Identity["OIDC/JWT Identity Resolver"]
     API --> Trace["Trace Context"]
     API --> Policy["Policy Engine"]
-    API --> Limiter["Rate Limiter"]
+    API --> Limiter["Request Limiter"]
+    API --> TokenBudget["Token Budget Limiter"]
     API --> Model["Mock Inference Backend"]
     API --> Audit["JSONL Audit Sink"]
     API --> TraceExport["Sanitized Trace Export"]
@@ -18,7 +19,8 @@ flowchart LR
 - `gateway/identity.py`: bearer JWT validation, role-claim mapping, and local demo-principal fallback.
 - `gateway/trace_context.py`: W3C `traceparent` parsing, child-span generation, and response propagation.
 - `gateway/policy.py`: role and reason-for-access decisions.
-- `gateway/rate_limit.py`: in-memory fixed-window rate limiter.
+- `gateway/rate_limit.py`: in-memory fixed-window request and token-budget limiters.
+- `gateway/token_budget.py`: deterministic estimated input-token accounting.
 - `gateway/audit.py`: structured JSONL audit events with identity and trace evidence.
 - `gateway/trace_exporter.py`: opt-in sanitized trace spans for local OpenTelemetry-shaped evidence.
 - `gateway/mock_inference.py`: synthetic model response with latency metadata.
@@ -30,7 +32,7 @@ flowchart LR
 - Replace local HS256 review tokens with JWKS-backed OIDC key rotation.
 - Add mTLS between gateway and model backends.
 - Move policy definitions to OPA, Cedar, or a signed config bundle.
-- Replace in-memory rate limiting with Redis or Envoy global rate limits.
+- Replace in-memory request and token-budget limiting with Redis or Envoy global rate limits.
 - Upgrade sanitized trace JSONL to OpenTelemetry SDK export through an OTLP collector while keeping Prometheus metrics for low-cardinality service health.
 - Capture GPU telemetry from DCGM and attach it to inference metrics.
 - Add per-model data handling rules and prompt/output redaction.

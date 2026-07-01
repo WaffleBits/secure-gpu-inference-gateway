@@ -16,6 +16,7 @@ class ModelPolicy:
     description: str
     allowed_roles: frozenset[str]
     requests_per_minute: int
+    input_tokens_per_minute: int
     requires_reason: bool = True
     sensitivity: str = "standard"
 
@@ -40,3 +41,5 @@ class AuditEvent:
     trace_id: str | None = None
     span_id: str | None = None
     parent_span_id: str | None = None
+    estimated_input_tokens: int | None = None
+    token_budget_limit: int | None = None
