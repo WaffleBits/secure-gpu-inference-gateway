@@ -24,6 +24,7 @@ class GatewayMetrics:
         self._requests: Counter[tuple[str, str]] = Counter()
         self._denials: Counter[tuple[str, str]] = Counter()
         self._auth_events: Counter[tuple[str, str]] = Counter()
+        self._input_tokens: Counter[tuple[str, str]] = Counter()
         self._latency_buckets: Counter[tuple[str, float]] = Counter()
         self._latency_count: Counter[str] = Counter()
         self._latency_sum: Counter[str] = Counter()
@@ -46,6 +47,10 @@ class GatewayMetrics:
         with self._lock:
             self._auth_events[(auth_method, outcome)] += 1
 
+    def record_input_tokens(self, model_id: str, outcome: str, token_count: int) -> None:
+        with self._lock:
+            self._input_tokens[(model_id, outcome)] += token_count
+
     def observe_latency(self, model_id: str, latency_seconds: float) -> None:
         with self._lock:
             self._latency_count[model_id] += 1
@@ -61,6 +66,7 @@ class GatewayMetrics:
                 *self._request_samples(),
                 *self._denial_samples(),
                 *self._auth_samples(),
+                *self._input_token_samples(),
                 *self._latency_samples(),
             ]
 
@@ -93,6 +99,13 @@ class GatewayMetrics:
                 for sample in samples
                 if sample.name == "security_gateway_auth_events_total"
             ),
+            "# HELP security_gateway_input_tokens_total Estimated input tokens by model and outcome.",
+            "# TYPE security_gateway_input_tokens_total counter",
+            *format_samples(
+                sample
+                for sample in samples
+                if sample.name == "security_gateway_input_tokens_total"
+            ),
             "# HELP security_gateway_inference_latency_seconds Mock inference latency histogram.",
             "# TYPE security_gateway_inference_latency_seconds histogram",
             *format_samples(
@@ -111,6 +124,8 @@ class GatewayMetrics:
                 "security_gateway_model_policy_info",
                 {
                     "model_id": policy.model_id,
+                    "input_tokens_per_minute": str(policy.input_tokens_per_minute),
+                    "requests_per_minute": str(policy.requests_per_minute),
                     "sensitivity": policy.sensitivity,
                     "requires_reason": str(policy.requires_reason).lower(),
                 },
@@ -147,6 +162,16 @@ class GatewayMetrics:
                 count,
             )
             for (auth_method, outcome), count in sorted(self._auth_events.items())
+        ]
+
+    def _input_token_samples(self) -> list[MetricSample]:
+        return [
+            MetricSample(
+                "security_gateway_input_tokens_total",
+                {"model_id": model_id, "outcome": outcome},
+                count,
+            )
+            for (model_id, outcome), count in sorted(self._input_tokens.items())
         ]
 
     def _latency_samples(self) -> list[MetricSample]:
