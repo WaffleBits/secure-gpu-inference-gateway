@@ -57,6 +57,7 @@ Status: partially implemented.
 
 - Keep the Prometheus `/metrics` endpoint and provisioned Grafana dashboard reviewable under local `docker compose`.
 - Keep sanitized trace JSONL export opt-in and free of prompt text, model outputs, access reason, subjects, and principal IDs.
+- Keep estimated input-token budget metrics and audit fields free of prompt text and principal-identifying trace attributes.
 - Upgrade the trace JSONL proof to full OpenTelemetry SDK export through an OTLP collector.
 - Add Grafana dashboard screenshots using synthetic traffic.
 - Add SLO burn-rate alert examples for auth failures, policy denials, rate limiting, and inference latency.
@@ -69,7 +70,7 @@ Status: planned.
 - Add adapters for Triton-compatible, vLLM-compatible, or SGLang-compatible backends.
 - Keep mock backend tests so the repo remains reviewable without GPU hardware.
 - Add GPU/DCGM telemetry correlation when real backend integration exists.
-- Track token throughput, queue depth, error rate, and per-model latency without exposing prompt contents.
+- Extend the current estimated input-token throughput proof with queue depth, backend error rate, and real per-model latency when backend integration exists.
 
 ## Milestone 7: Control Mapping
 

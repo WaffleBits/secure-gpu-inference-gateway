@@ -10,6 +10,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Audit durability: every allowed, policy-denied, and rate-limited inference request writes one audit event.
 - Traceability: every inference response and audit event carries a trace ID for request correlation.
 - Trace privacy: optional trace exports omit prompt text, generated output, access reason, subject, and principal ID.
+- Budget visibility: request-count and estimated input-token budget decisions are visible in audit events and metrics.
 
 ## Metrics
 
@@ -19,11 +20,12 @@ The `/metrics` endpoint exposes Prometheus-compatible text output without requir
 - `security_gateway_auth_events_total`: authentication attempts by method and outcome.
 - `security_gateway_requests_total`: inference requests by `model_id` and `outcome`.
 - `security_gateway_denials_total`: denied requests by `model_id` and policy or limiter reason.
+- `security_gateway_input_tokens_total`: estimated input tokens by `model_id` and `outcome`.
 - `security_gateway_inference_latency_seconds`: histogram, count, and sum for successful mock inference calls.
 
 ## Trace Export
 
-Set `TRACE_EXPORT_PATH` or `OTEL_TRACE_EXPORT_PATH` to write one sanitized JSONL span per inference request. The exported record is OpenTelemetry-shaped for local review: service name, route, trace ID, span ID, parent span ID, outcome, auth method, model ID, and latency. It deliberately omits payload and identity fields that do not belong in public observability evidence.
+Set `TRACE_EXPORT_PATH` or `OTEL_TRACE_EXPORT_PATH` to write one sanitized JSONL span per inference request. The exported record is OpenTelemetry-shaped for local review: service name, route, trace ID, span ID, parent span ID, outcome, auth method, model ID, estimated input-token count, configured token budget, and latency. It deliberately omits payload and identity fields that do not belong in public observability evidence.
 
 The checked example in `artifacts/sanitized-trace-evidence.jsonl` shows the expected shape. `tests/test_trace_exporter.py` covers the privacy boundary.
 
@@ -34,6 +36,7 @@ The checked example in `artifacts/sanitized-trace-evidence.jsonl` shows the expe
 Dashboard panels cover:
 
 - request rate by outcome;
+- estimated input-token throughput by outcome;
 - p95 latency by model;
 - authentication outcome rate;
 - denial counts by model and reason;
@@ -43,7 +46,7 @@ Dashboard panels cover:
 
 - Policy-denied traffic exceeds an expected baseline for a restricted model.
 - JWT authentication failures spike by method or issuer rollout window.
-- Rate-limited traffic spikes for a single principal or model.
+- Request-count or token-budget limited traffic spikes for a single principal or model.
 - p95 latency breaches the 500 ms objective for more than 10 minutes.
 - Gateway health probe fails for 2 consecutive minutes.
 - Audit log write errors appear in application logs.
@@ -83,6 +86,14 @@ Dashboard panels cover:
 4. Raise the limit only after validating abuse risk and backend capacity.
 5. Record the decision with model, principal, prior limit, new limit, and expiration date.
 
+### Token Budget Spike
+
+1. Check `security_gateway_requests_total{outcome="token_budget_limited"}` by model.
+2. Compare `security_gateway_input_tokens_total` against the model's configured `input_tokens_per_minute`.
+3. Review audit events for repeated principal/model pairs, estimated token counts, and shared trace IDs.
+4. If traffic is abusive, block or throttle at the edge before raising the model budget.
+5. If traffic is legitimate, raise the budget only with a capacity note and rollback time.
+
 ### Latency Regression
 
 1. Compare latency buckets across models to isolate model-specific versus gateway-wide impact.
@@ -101,3 +112,4 @@ Dashboard panels cover:
 - Kubernetes readiness and liveness probes should target `/health`.
 - Prometheus should scrape `/metrics` on port 8000.
 - Optional trace export path must point at a writable location and must not be treated as a prompt or output sink.
+- Model policy changes should review both `requests_per_minute` and `input_tokens_per_minute`.
