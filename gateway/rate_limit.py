@@ -30,3 +30,30 @@ class FixedWindowRateLimiter:
         window.count += 1
         return True
 
+
+class FixedWindowTokenBudgetLimiter:
+    def __init__(self, window_seconds: int = 60) -> None:
+        self.window_seconds = window_seconds
+        self.windows: dict[tuple[str, str], Window] = {}
+
+    def allow(self, principal_id: str, model_id: str, cost: int, limit: int) -> bool:
+        if cost < 1:
+            raise ValueError("token cost must be positive")
+        if limit < 1:
+            raise ValueError("token limit must be positive")
+
+        now = time.time()
+        key = (principal_id, model_id)
+        window = self.windows.get(key)
+
+        if window is None or now - window.started_at >= self.window_seconds:
+            if cost > limit:
+                return False
+            self.windows[key] = Window(started_at=now, count=cost)
+            return True
+
+        if window.count + cost > limit:
+            return False
+
+        window.count += cost
+        return True

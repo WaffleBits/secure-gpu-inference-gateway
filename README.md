@@ -1,6 +1,6 @@
 # Secure GPU Inference Gateway
 
-Security-focused AI infrastructure demo for OIDC/JWT-authenticated model access, role-based authorization, per-model rate limits, trace-aware audit logs, and policy-driven inference routing.
+Security-focused AI infrastructure demo for OIDC/JWT-authenticated model access, role-based authorization, per-model request and token-budget limits, trace-aware audit logs, and policy-driven inference routing.
 
 This repository uses a mock inference backend so the security and infrastructure logic can be reviewed without GPU hardware, model weights, proprietary data, or cloud credentials.
 
@@ -16,10 +16,12 @@ This is the flagship portfolio project for the platform-security-to-AI-infrastru
 - OIDC-style bearer JWT validation with issuer, audience, expiry, and role-claim checks.
 - Demo principals and role-based model policies for local review.
 - Reason-for-access enforcement for sensitive models.
-- Fixed-window rate limiting by principal and model.
+- Fixed-window request and estimated input-token limiting by principal and model.
 - Structured JSONL audit logging with authentication and trace context evidence.
 - W3C `traceparent` propagation for OpenTelemetry-compatible request correlation.
-- Prometheus-compatible `/metrics` endpoint for authentication, policy, limiter, and latency telemetry.
+- Prometheus-compatible `/metrics` endpoint for authentication, policy, limiter, token-throughput, and latency telemetry.
+- Opt-in sanitized trace JSONL export for local OpenTelemetry-shaped span evidence.
+- Prometheus and Grafana provisioning files for local observability review.
 - Mock GPU inference backend with latency metadata.
 - Focused unit tests for policy and limiter behavior.
 - Threat model and architecture notes.
@@ -42,10 +44,12 @@ Relevant areas:
 - Start with `gateway/app.py` for request orchestration.
 - Review `gateway/identity.py` for bearer JWT verification and demo-principal fallback controls.
 - Review `gateway/policy.py` for role and reason-for-access decisions.
-- Review `gateway/rate_limit.py` for limiter behavior.
+- Review `gateway/rate_limit.py` and `gateway/token_budget.py` for request-count and token-budget limiter behavior.
 - Review `gateway/metrics.py` and `/metrics` for Prometheus-compatible operational telemetry.
 - Review `gateway/audit.py` for structured evidence.
+- Review `gateway/trace_exporter.py` for sanitized trace span export without prompt, output, access-reason, or principal identifiers.
 - Review `gateway/trace_context.py` for W3C trace context parsing and response propagation.
+- Review `deploy/grafana/dashboards/security-gateway.json` for dashboard queries over the gateway metrics.
 - Review `docs/OPERATIONS.md` and `deploy/kubernetes/gateway.yaml` for SLO/runbook and deployment thinking.
 - Check `tests/` for behavior-focused coverage.
 - Read `docs/PORTFOLIO_REVIEW.md` for the role-specific review guide.
@@ -71,6 +75,23 @@ Metrics:
 ```bash
 curl http://localhost:8000/metrics
 ```
+
+Sanitized trace evidence:
+
+```bash
+set TRACE_EXPORT_PATH=artifacts/local-traces.jsonl
+uvicorn gateway.app:app --reload
+```
+
+Requests still write the normal audit event, but trace export is intentionally narrower. It records service, route, model, outcome, auth method, estimated input-token count, configured token budget, latency, and trace identifiers; it does not record prompt text, model output, access reason, subject, or principal ID. A checked example is in `artifacts/sanitized-trace-evidence.jsonl`.
+
+Local dashboard stack:
+
+```bash
+docker compose up --build
+```
+
+Then open Prometheus at `http://localhost:9090` and Grafana at `http://localhost:3000`. The dashboard is provisioned from `deploy/grafana/dashboards/security-gateway.json`.
 
 Inference request:
 
@@ -106,7 +127,9 @@ This project covers:
 - Public-safe audit and policy design.
 - Issuer-bound JWT validation, role claim mapping, and demo-auth disablement.
 - W3C trace context propagation for request correlation across a model-serving control plane.
-- Prometheus-compatible metrics for authentication outcomes, policy denials, rate limits, and inference latency.
+- Prometheus-compatible metrics for authentication outcomes, policy denials, request/token limiting, input-token throughput, and inference latency.
+- Sanitized trace export that proves request correlation without leaking prompts, outputs, reasons, or principal identifiers.
+- Local Prometheus/Grafana review files for model-access, auth, denial, and latency telemetry.
 - Kubernetes-ready health probes, scrape annotations, and non-root runtime posture.
 - Backend service design with clear separation between API, policy, rate limiting, and inference.
 - A credible path toward production controls such as JWKS key rotation, mTLS, external policy engines, GPU telemetry, and model routing.
@@ -114,8 +137,8 @@ This project covers:
 ## Gaps Worth Closing Next
 
 - Replace local HS256 review tokens with JWKS-backed OIDC key rotation.
-- Add Redis-backed or gateway-level distributed rate limiting.
-- Add full OpenTelemetry SDK export and Grafana dashboard screenshots.
+- Replace in-memory request and token-budget limiters with Redis-backed or gateway-level distributed controls.
+- Upgrade the local trace JSONL proof into full OpenTelemetry SDK export through an OTLP collector, then capture Grafana screenshots from synthetic traffic.
 - Add policy-as-code examples, redaction controls, and negative authorization tests.
 - Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
 - Add SOC2/FedRAMP-inspired control mapping notes without claiming certification or production authorization.

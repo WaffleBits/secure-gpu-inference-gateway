@@ -8,10 +8,13 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - `gateway/identity.py`: issuer-bound JWT verification, role claim mapping, and demo-auth disablement.
 - `gateway/trace_context.py`: W3C trace context parsing and child-span propagation.
 - `gateway/policy.py`: role-based model authorization and reason-for-access checks.
-- `gateway/rate_limit.py`: fixed-window limiter behavior by principal and model.
-- `gateway/metrics.py`: Prometheus-compatible authentication, policy, limiter, and latency samples.
+- `gateway/rate_limit.py`: fixed-window request and token-budget limiter behavior by principal and model.
+- `gateway/token_budget.py`: deterministic estimated input-token accounting.
+- `gateway/metrics.py`: Prometheus-compatible authentication, policy, limiter, token-throughput, and latency samples.
 - `gateway/audit.py`: structured JSONL evidence for allowed and denied requests with auth and trace fields.
+- `gateway/trace_exporter.py`: sanitized trace span export for local observability evidence.
 - `gateway/mock_inference.py`: reviewable model-serving boundary without private models or GPU hardware.
+- `deploy/grafana/dashboards/security-gateway.json`: dashboard queries for request outcomes, latency, auth, denial, and model policy review.
 - `docs/OPERATIONS.md`: SLOs, alert candidates, and incident runbooks.
 - `ROADMAP.md`: secure AI / cloud governance roadmap for policy-as-code, redaction, supply-chain evidence, telemetry, and control mapping.
 - `deploy/kubernetes/gateway.yaml`: health probes, non-root container posture, and scrape annotations.
@@ -24,7 +27,10 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Making model access decisions explainable and testable.
 - Preserving audit evidence and trace IDs without exposing sensitive prompts, users, or model outputs.
 - Exposing model-serving control-plane metrics that support SRE review.
+- Proving token-budget abuse control without writing prompt text into metrics or trace spans.
 - Handling request correlation through OpenTelemetry-compatible W3C trace context.
+- Exporting sanitized trace evidence that keeps prompt, output, access-reason, subject, and principal identifiers out of observability artifacts.
+- Providing Prometheus/Grafana review files that turn gateway metrics into operational panels.
 - Designing a mockable inference boundary that can later route to real model-serving backends.
 - Showing Kubernetes deployment thinking without requiring cloud credentials.
 - Keeping the next-build path focused on platform security and AI infrastructure controls instead of generic dashboard work.
@@ -32,7 +38,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 
 ## Technical Scope
 
-- Security infrastructure: JWT authentication, authorization, auditability, rate limiting, and abuse-control thinking.
+- Security infrastructure: JWT authentication, authorization, auditability, request/token limiting, and abuse-control thinking.
 - AI platform engineering: protected inference paths, model routing, operational metrics, and service boundaries.
 - Infrastructure/SRE: health probes, Prometheus metrics, trace propagation, SLOs, and incident runbooks.
 - Backend engineering: FastAPI structure, clear modules, focused tests, and production extension points.
@@ -41,7 +47,8 @@ This project is intentionally designed as a public-safe AI security infrastructu
 
 - Add JWKS-backed OIDC key rotation examples.
 - Add mTLS notes for gateway-to-backend communication.
-- Add full OpenTelemetry SDK export and dashboard screenshots.
+- Replace in-memory request/token budget controls with distributed limiters.
+- Upgrade the local trace JSONL proof into full OpenTelemetry SDK export through an OTLP collector and capture dashboard screenshots from synthetic traffic.
 - Add policy-as-code and redaction examples with positive and negative test cases.
 - Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
 - Add SOC2/FedRAMP-inspired control mapping notes without implying certification or production authorization.

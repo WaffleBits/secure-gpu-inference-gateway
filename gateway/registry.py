@@ -28,6 +28,7 @@ MODEL_POLICIES = {
         description="Synthetic mission report summarization model",
         allowed_roles=frozenset({"analyst", "mission-user", "platform-admin"}),
         requests_per_minute=30,
+        input_tokens_per_minute=8000,
         requires_reason=True,
         sensitivity="standard",
     ),
@@ -36,6 +37,7 @@ MODEL_POLICIES = {
         description="Synthetic security event triage model",
         allowed_roles=frozenset({"security-engineer", "platform-admin"}),
         requests_per_minute=20,
+        input_tokens_per_minute=6000,
         requires_reason=True,
         sensitivity="restricted",
     ),
@@ -44,8 +46,8 @@ MODEL_POLICIES = {
         description="Low-risk model used for load and health checks",
         allowed_roles=frozenset({"analyst", "security-engineer", "platform-admin"}),
         requests_per_minute=120,
+        input_tokens_per_minute=20000,
         requires_reason=False,
         sensitivity="low",
     ),
 }
-
