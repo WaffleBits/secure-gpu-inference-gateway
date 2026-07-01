@@ -16,11 +16,12 @@ class MetricsTest(unittest.TestCase):
             ("principal lacks an allowed role for this model",),
         )
         metrics.record_auth_event("jwt", "accepted")
+        metrics.record_input_tokens("mission-summarizer", "allowed", 42)
 
         rendered = metrics.render_prometheus(MODEL_POLICIES)
 
         self.assertIn(
-            'security_gateway_model_policy_info{model_id="mission-summarizer",requires_reason="true",sensitivity="standard"} 1',
+            'security_gateway_model_policy_info{input_tokens_per_minute="8000",model_id="mission-summarizer",requests_per_minute="30",requires_reason="true",sensitivity="standard"} 1',
             rendered,
         )
         self.assertIn(
@@ -33,6 +34,10 @@ class MetricsTest(unittest.TestCase):
         )
         self.assertIn(
             'security_gateway_auth_events_total{auth_method="jwt",outcome="accepted"} 1',
+            rendered,
+        )
+        self.assertIn(
+            'security_gateway_input_tokens_total{model_id="mission-summarizer",outcome="allowed"} 42',
             rendered,
         )
         self.assertIn(
