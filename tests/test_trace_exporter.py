@@ -36,12 +36,16 @@ class TraceExporterTest(unittest.TestCase):
                 "output": "SECRET_OUTPUT",
                 "reason": "SECRET_REASON",
                 "principal_id": "analyst-1",
+                "ai.gateway.estimated_input_tokens": 12,
+                "ai.gateway.token_budget_limit": 8000,
             },
         )
 
         serialized = json.dumps(record, sort_keys=True)
         self.assertIn('"trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"', serialized)
         self.assertIn('"ai.gateway.outcome": "allowed"', serialized)
+        self.assertIn('"ai.gateway.estimated_input_tokens": 12', serialized)
+        self.assertIn('"ai.gateway.token_budget_limit": 8000', serialized)
         self.assertNotIn("SECRET_PROMPT", serialized)
         self.assertNotIn("SECRET_OUTPUT", serialized)
         self.assertNotIn("SECRET_REASON", serialized)

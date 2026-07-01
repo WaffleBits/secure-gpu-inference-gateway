@@ -17,6 +17,8 @@ SAFE_ATTRIBUTE_KEYS = frozenset(
         "ai.gateway.model_id",
         "ai.gateway.outcome",
         "ai.gateway.sampled",
+        "ai.gateway.estimated_input_tokens",
+        "ai.gateway.token_budget_limit",
         "ai.gateway.trace_source",
     }
 )

@@ -136,11 +136,38 @@
       "targets": [
         {
           "expr": "security_gateway_model_policy_info",
-          "legendFormat": "{{model_id}} {{sensitivity}} reason={{requires_reason}}"
+          "legendFormat": "{{model_id}} {{sensitivity}} rpm={{requests_per_minute}} tpm={{input_tokens_per_minute}} reason={{requires_reason}}"
         }
       ],
       "title": "Configured Model Policies",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "sum by (model_id, outcome) (rate(security_gateway_input_tokens_total[5m]))",
+          "legendFormat": "{{model_id}} {{outcome}}"
+        }
+      ],
+      "title": "Estimated Input Token Rate",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",
