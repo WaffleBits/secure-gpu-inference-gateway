@@ -11,6 +11,7 @@ flowchart LR
     API --> Model["Mock Inference Backend"]
     API --> Audit["JSONL Audit Sink"]
     API --> TraceExport["Sanitized Trace Export"]
+    Policy --> Capacity["Synthetic Capacity Plan"]
 ```
 
 ## Components
@@ -23,6 +24,7 @@ flowchart LR
 - `gateway/token_budget.py`: deterministic estimated input-token accounting.
 - `gateway/audit.py`: structured JSONL audit events with identity and trace evidence.
 - `gateway/trace_exporter.py`: opt-in sanitized trace spans for local OpenTelemetry-shaped evidence.
+- `gateway/capacity_plan.py`: synthetic capacity and cost-to-serve planning from model policy and benchmark assumptions.
 - `gateway/mock_inference.py`: synthetic model response with latency metadata.
 - `gateway/registry.py`: demo principals and model policies.
 - `deploy/prometheus` and `deploy/grafana`: local metrics scrape and dashboard provisioning.
@@ -35,4 +37,5 @@ flowchart LR
 - Replace in-memory request and token-budget limiting with Redis or Envoy global rate limits.
 - Upgrade sanitized trace JSONL to OpenTelemetry SDK export through an OTLP collector while keeping Prometheus metrics for low-cardinality service health.
 - Capture GPU telemetry from DCGM and attach it to inference metrics.
+- Replace synthetic capacity assumptions with measured backend profiles after real model-serving integration exists.
 - Add per-model data handling rules and prompt/output redaction.
