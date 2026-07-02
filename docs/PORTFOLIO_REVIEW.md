@@ -13,7 +13,9 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - `gateway/metrics.py`: Prometheus-compatible authentication, policy, limiter, token-throughput, and latency samples.
 - `gateway/audit.py`: structured JSONL evidence for allowed and denied requests with auth and trace fields.
 - `gateway/trace_exporter.py`: sanitized trace span export for local observability evidence.
+- `gateway/capacity_plan.py`: synthetic capacity and cost-to-serve projection tied to model policies.
 - `gateway/mock_inference.py`: reviewable model-serving boundary without private models or GPU hardware.
+- `artifacts/capacity-plan-evidence.json`: checked aggregate capacity artifact for local review.
 - `deploy/grafana/dashboards/security-gateway.json`: dashboard queries for request outcomes, latency, auth, denial, and model policy review.
 - `docs/OPERATIONS.md`: SLOs, alert candidates, and incident runbooks.
 - `ROADMAP.md`: secure AI / cloud governance roadmap for policy-as-code, redaction, supply-chain evidence, telemetry, and control mapping.
@@ -30,6 +32,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Proving token-budget abuse control without writing prompt text into metrics or trace spans.
 - Handling request correlation through OpenTelemetry-compatible W3C trace context.
 - Exporting sanitized trace evidence that keeps prompt, output, access-reason, subject, and principal identifiers out of observability artifacts.
+- Connecting model policy limits to synthetic capacity, utilization, latency, and cost-to-serve estimates without using private workload data.
 - Providing Prometheus/Grafana review files that turn gateway metrics into operational panels.
 - Designing a mockable inference boundary that can later route to real model-serving backends.
 - Showing Kubernetes deployment thinking without requiring cloud credentials.
@@ -49,6 +52,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Add mTLS notes for gateway-to-backend communication.
 - Replace in-memory request/token budget controls with distributed limiters.
 - Upgrade the local trace JSONL proof into full OpenTelemetry SDK export through an OTLP collector and capture dashboard screenshots from synthetic traffic.
+- Replace synthetic capacity profiles with measured backend profiles after model-serving integration exists.
 - Add policy-as-code and redaction examples with positive and negative test cases.
 - Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
 - Add SOC2/FedRAMP-inspired control mapping notes without implying certification or production authorization.
