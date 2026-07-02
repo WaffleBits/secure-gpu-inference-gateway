@@ -1,0 +1,62 @@
+{
+  "assumptions": {
+    "cost_basis": "single synthetic accelerator-hour",
+    "safety_margin": 0.2,
+    "target_gpu_utilization": 0.72
+  },
+  "data_scope": "synthetic aggregate benchmark profile; excludes request bodies, decoded text, identities, secrets, and production logs",
+  "models": [
+    {
+      "accelerator_class": "synthetic-review-gpu",
+      "cost_per_1000_requests_usd": 0.073457,
+      "cost_per_1m_input_tokens_usd": 0.278245,
+      "model_id": "mission-summarizer",
+      "modeled_decode_tokens_per_minute": 41675.294,
+      "modeled_input_tokens_per_minute": 167717.647,
+      "modeled_requests_per_minute": 635.294,
+      "observed_gpu_utilization": 0.68,
+      "observed_p95_latency_ms": 410,
+      "policy_input_token_utilization": 0.047699,
+      "policy_input_tokens_per_minute": 8000,
+      "policy_request_utilization": 0.047222,
+      "policy_requests_per_minute": 30,
+      "profile_name": "synthetic-standard-summary",
+      "status": "within_synthetic_capacity"
+    },
+    {
+      "accelerator_class": "synthetic-review-gpu",
+      "cost_per_1000_requests_usd": 0.106301,
+      "cost_per_1m_input_tokens_usd": 0.356867,
+      "model_id": "threat-triage",
+      "modeled_decode_tokens_per_minute": 32224.865,
+      "modeled_input_tokens_per_minute": 130767.568,
+      "modeled_requests_per_minute": 439.005,
+      "observed_gpu_utilization": 0.74,
+      "observed_p95_latency_ms": 530,
+      "policy_input_token_utilization": 0.045883,
+      "policy_input_tokens_per_minute": 6000,
+      "policy_request_utilization": 0.045558,
+      "policy_requests_per_minute": 20,
+      "profile_name": "synthetic-restricted-triage",
+      "status": "within_synthetic_capacity"
+    },
+    {
+      "accelerator_class": "synthetic-review-gpu",
+      "cost_per_1000_requests_usd": 0.003788,
+      "cost_per_1m_input_tokens_usd": 0.022894,
+      "model_id": "benchmark-echo",
+      "modeled_decode_tokens_per_minute": 124800.0,
+      "modeled_input_tokens_per_minute": 873600.0,
+      "modeled_requests_per_minute": 5280.0,
+      "observed_gpu_utilization": 0.36,
+      "observed_p95_latency_ms": 95,
+      "policy_input_token_utilization": 0.022894,
+      "policy_input_tokens_per_minute": 20000,
+      "policy_request_utilization": 0.022727,
+      "policy_requests_per_minute": 120,
+      "profile_name": "synthetic-health-check",
+      "status": "within_synthetic_capacity"
+    }
+  ],
+  "schema_version": 1
+}
