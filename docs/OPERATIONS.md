@@ -11,6 +11,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Traceability: every inference response and audit event carries a trace ID for request correlation.
 - Trace privacy: optional trace exports omit prompt text, generated output, access reason, subject, and principal ID.
 - Budget visibility: request-count and estimated input-token budget decisions are visible in audit events and metrics.
+- Capacity review: model policy changes compare request and input-token limits against a synthetic capacity/cost plan before rollout.
 
 ## Metrics
 
@@ -28,6 +29,14 @@ The `/metrics` endpoint exposes Prometheus-compatible text output without requir
 Set `TRACE_EXPORT_PATH` or `OTEL_TRACE_EXPORT_PATH` to write one sanitized JSONL span per inference request. The exported record is OpenTelemetry-shaped for local review: service name, route, trace ID, span ID, parent span ID, outcome, auth method, model ID, estimated input-token count, configured token budget, and latency. It deliberately omits payload and identity fields that do not belong in public observability evidence.
 
 The checked example in `artifacts/sanitized-trace-evidence.jsonl` shows the expected shape. `tests/test_trace_exporter.py` covers the privacy boundary.
+
+## Capacity Plan Artifact
+
+Run `python -m gateway.capacity_plan --output artifacts/capacity-plan-evidence.json` to regenerate the checked synthetic capacity plan.
+
+The report compares each configured model policy with a synthetic benchmark profile and records modeled request capacity, input-token capacity, decode-token capacity, p95 latency, target utilization, safety margin, and cost-to-serve estimates. The report is aggregate-only and intentionally excludes request bodies, decoded text, identities, secrets, and production logs.
+
+Use the artifact before raising `requests_per_minute` or `input_tokens_per_minute`; if a policy would exceed modeled capacity, treat that as a rollout blocker until the benchmark profile or backend fleet shape is updated.
 
 ## Local Dashboard
 
@@ -92,7 +101,15 @@ Dashboard panels cover:
 2. Compare `security_gateway_input_tokens_total` against the model's configured `input_tokens_per_minute`.
 3. Review audit events for repeated principal/model pairs, estimated token counts, and shared trace IDs.
 4. If traffic is abusive, block or throttle at the edge before raising the model budget.
-5. If traffic is legitimate, raise the budget only with a capacity note and rollback time.
+5. If traffic is legitimate, regenerate `artifacts/capacity-plan-evidence.json` and raise the budget only with a capacity note and rollback time.
+
+### Capacity Policy Change
+
+1. Regenerate `artifacts/capacity-plan-evidence.json`.
+2. Confirm the target model status is `within_synthetic_capacity`.
+3. Compare `policy_request_utilization` and `policy_input_token_utilization` against the intended rollout margin.
+4. Keep the prior policy available for rollback if the change increases either utilization materially.
+5. Record the policy diff, modeled capacity result, and rollback owner in the release note.
 
 ### Latency Regression
 
@@ -112,4 +129,4 @@ Dashboard panels cover:
 - Kubernetes readiness and liveness probes should target `/health`.
 - Prometheus should scrape `/metrics` on port 8000.
 - Optional trace export path must point at a writable location and must not be treated as a prompt or output sink.
-- Model policy changes should review both `requests_per_minute` and `input_tokens_per_minute`.
+- Model policy changes should review both `requests_per_minute` and `input_tokens_per_minute`, then regenerate the capacity plan artifact.
