@@ -12,6 +12,9 @@ flowchart LR
     API --> Audit["JSONL Audit Sink"]
     API --> TraceExport["Sanitized Trace Export"]
     Policy --> Capacity["Synthetic Capacity Plan"]
+    Replay["Workload Readiness Replay"] --> Policy
+    Replay --> Limiter
+    Replay --> TokenBudget
 ```
 
 ## Components
@@ -24,6 +27,7 @@ flowchart LR
 - `gateway/token_budget.py`: deterministic estimated input-token accounting.
 - `gateway/audit.py`: structured JSONL audit events with identity and trace evidence.
 - `gateway/trace_exporter.py`: opt-in sanitized trace spans for local OpenTelemetry-shaped evidence.
+- `gateway/workload_replay.py`: synthetic aggregate workload replay for guardrail coverage and local readiness gates.
 - `gateway/capacity_plan.py`: synthetic capacity and cost-to-serve planning from model policy and benchmark assumptions.
 - `gateway/mock_inference.py`: synthetic model response with latency metadata.
 - `gateway/registry.py`: demo principals and model policies.
@@ -38,4 +42,5 @@ flowchart LR
 - Upgrade sanitized trace JSONL to OpenTelemetry SDK export through an OTLP collector while keeping Prometheus metrics for low-cardinality service health.
 - Capture GPU telemetry from DCGM and attach it to inference metrics.
 - Replace synthetic capacity assumptions with measured backend profiles after real model-serving integration exists.
+- Extend workload replay with backend error-rate, queue-depth, and resilience probes after a real serving adapter exists.
 - Add per-model data handling rules and prompt/output redaction.
