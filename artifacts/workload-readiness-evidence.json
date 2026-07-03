@@ -1,0 +1,125 @@
+{
+  "data_scope": "synthetic aggregate workload replay; excludes request bodies, decoded text, identities, secrets, access reasons, and production logs",
+  "generated_by": "gateway.workload_replay",
+  "guardrail_coverage": {
+    "missing_outcomes": [],
+    "observed_outcomes": [
+      "allowed",
+      "policy_denied",
+      "rate_limited",
+      "token_budget_limited"
+    ]
+  },
+  "latency_ms": {
+    "count": 31,
+    "max": 62.8,
+    "p50": 57.172,
+    "p95": 62.8
+  },
+  "models": [
+    {
+      "allowed_latency_ms": {
+        "count": 1,
+        "max": 20.244,
+        "p50": 20.244,
+        "p95": 20.244
+      },
+      "estimated_input_tokens": 16,
+      "model_id": "benchmark-echo",
+      "outcomes": {
+        "allowed": 1,
+        "policy_denied": 1
+      },
+      "policy_limits": {
+        "input_tokens_per_minute": 20000,
+        "requests_per_minute": 120
+      },
+      "request_count": 2
+    },
+    {
+      "allowed_latency_ms": {
+        "count": 9,
+        "max": 62.8,
+        "p50": 61.4,
+        "p95": 62.8
+      },
+      "estimated_input_tokens": 9034,
+      "model_id": "mission-summarizer",
+      "outcomes": {
+        "allowed": 9,
+        "policy_denied": 1,
+        "token_budget_limited": 1
+      },
+      "policy_limits": {
+        "input_tokens_per_minute": 8000,
+        "requests_per_minute": 30
+      },
+      "request_count": 11
+    },
+    {
+      "allowed_latency_ms": {
+        "count": 21,
+        "max": 57.872,
+        "p50": 56.472,
+        "p95": 57.872
+      },
+      "estimated_input_tokens": 118,
+      "model_id": "threat-triage",
+      "outcomes": {
+        "allowed": 21,
+        "policy_denied": 1,
+        "rate_limited": 1
+      },
+      "policy_limits": {
+        "input_tokens_per_minute": 6000,
+        "requests_per_minute": 20
+      },
+      "request_count": 23
+    }
+  ],
+  "outcomes": {
+    "allowed": 31,
+    "policy_denied": 3,
+    "rate_limited": 1,
+    "token_budget_limited": 1
+  },
+  "readiness_status": "pass",
+  "release_gates": [
+    {
+      "missing_outcomes": [],
+      "name": "guardrail_outcome_coverage",
+      "status": "pass"
+    },
+    {
+      "name": "allowed_latency_p95",
+      "observed_ms": 62.8,
+      "status": "pass",
+      "threshold_ms": 120.0
+    },
+    {
+      "name": "public_safe_artifact",
+      "omitted_categories": [
+        "payload contents",
+        "model responses",
+        "identity fields",
+        "access justification text",
+        "auth material",
+        "production logs"
+      ],
+      "status": "pass"
+    }
+  ],
+  "request_count": 36,
+  "rollout_recommendation": "ready_for_local_review",
+  "scenario_name": "synthetic_gateway_workload_readiness",
+  "schema_version": 1,
+  "thresholds": {
+    "max_allowed_p95_latency_ms": 120.0,
+    "required_outcomes": [
+      "allowed",
+      "policy_denied",
+      "rate_limited",
+      "token_budget_limited"
+    ]
+  }
+}
