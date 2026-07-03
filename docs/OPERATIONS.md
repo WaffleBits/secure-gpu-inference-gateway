@@ -12,6 +12,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Trace privacy: optional trace exports omit prompt text, generated output, access reason, subject, and principal ID.
 - Budget visibility: request-count and estimated input-token budget decisions are visible in audit events and metrics.
 - Capacity review: model policy changes compare request and input-token limits against a synthetic capacity/cost plan before rollout.
+- Workload readiness: synthetic replay covers allowed, policy-denied, rate-limited, and token-budget-limited paths before policy changes are treated as locally reviewable.
 
 ## Metrics
 
@@ -37,6 +38,14 @@ Run `python -m gateway.capacity_plan --output artifacts/capacity-plan-evidence.j
 The report compares each configured model policy with a synthetic benchmark profile and records modeled request capacity, input-token capacity, decode-token capacity, p95 latency, target utilization, safety margin, and cost-to-serve estimates. The report is aggregate-only and intentionally excludes request bodies, decoded text, identities, secrets, and production logs.
 
 Use the artifact before raising `requests_per_minute` or `input_tokens_per_minute`; if a policy would exceed modeled capacity, treat that as a rollout blocker until the benchmark profile or backend fleet shape is updated.
+
+## Workload-Readiness Artifact
+
+Run `python -m gateway.workload_replay --output artifacts/workload-readiness-evidence.json` to regenerate the checked synthetic workload-readiness report.
+
+The replay drives aggregate synthetic traffic through the same role policy, request-limit, and token-budget logic used by the gateway. The report records outcome coverage, allowed-path p95 latency, model-level policy pressure, and release-gate status. It deliberately excludes request bodies, decoded text, identities, secrets, access reasons, and production logs.
+
+Treat a `hold` readiness status as a blocker for local policy-limit changes until the missing guardrail path or latency regression is understood.
 
 ## Local Dashboard
 
@@ -106,10 +115,12 @@ Dashboard panels cover:
 ### Capacity Policy Change
 
 1. Regenerate `artifacts/capacity-plan-evidence.json`.
-2. Confirm the target model status is `within_synthetic_capacity`.
-3. Compare `policy_request_utilization` and `policy_input_token_utilization` against the intended rollout margin.
-4. Keep the prior policy available for rollback if the change increases either utilization materially.
-5. Record the policy diff, modeled capacity result, and rollback owner in the release note.
+2. Regenerate `artifacts/workload-readiness-evidence.json`.
+3. Confirm the target model status is `within_synthetic_capacity`.
+4. Confirm workload readiness remains `pass`.
+5. Compare `policy_request_utilization` and `policy_input_token_utilization` against the intended rollout margin.
+6. Keep the prior policy available for rollback if the change increases either utilization materially.
+7. Record the policy diff, modeled capacity result, workload replay result, and rollback owner in the release note.
 
 ### Latency Regression
 
@@ -129,4 +140,4 @@ Dashboard panels cover:
 - Kubernetes readiness and liveness probes should target `/health`.
 - Prometheus should scrape `/metrics` on port 8000.
 - Optional trace export path must point at a writable location and must not be treated as a prompt or output sink.
-- Model policy changes should review both `requests_per_minute` and `input_tokens_per_minute`, then regenerate the capacity plan artifact.
+- Model policy changes should review both `requests_per_minute` and `input_tokens_per_minute`, then regenerate the capacity plan and workload-readiness artifacts.
