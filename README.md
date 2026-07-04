@@ -1,6 +1,6 @@
 # Secure GPU Inference Gateway
 
-Security-focused AI infrastructure demo for OIDC/JWT-authenticated model access, role-based authorization, per-model request and token-budget limits, trace-aware audit logs, synthetic workload-readiness replay, synthetic capacity/cost planning, and policy-driven inference routing.
+Security-focused AI infrastructure demo for OIDC/JWT-authenticated model access, role-based authorization, per-model request and token-budget limits, trace-aware audit logs, OTLP collector-ready trace export, synthetic workload-readiness replay, synthetic capacity/cost planning, and policy-driven inference routing.
 
 This repository uses a mock inference backend so the security and infrastructure logic can be reviewed without GPU hardware, model weights, proprietary data, or cloud credentials.
 
@@ -21,9 +21,10 @@ This is the flagship portfolio project for the platform-security-to-AI-infrastru
 - W3C `traceparent` propagation for OpenTelemetry-compatible request correlation.
 - Prometheus-compatible `/metrics` endpoint for authentication, policy, limiter, token-throughput, and latency telemetry.
 - Opt-in sanitized trace JSONL export for local OpenTelemetry-shaped span evidence.
+- OTLP/HTTP collector payload generation and optional collector posting for sanitized traces.
 - Synthetic workload-readiness replay artifact for allowed, policy-denied, rate-limited, and token-budget-limited paths.
 - Synthetic capacity and cost-to-serve planning artifact tied to configured model policies.
-- Prometheus and Grafana provisioning files for local observability review.
+- Prometheus, OpenTelemetry Collector, and Grafana provisioning files for local observability review.
 - Mock GPU inference backend with latency metadata.
 - Focused unit tests for policy and limiter behavior.
 - Threat model and architecture notes.
@@ -50,6 +51,7 @@ Relevant areas:
 - Review `gateway/metrics.py` and `/metrics` for Prometheus-compatible operational telemetry.
 - Review `gateway/audit.py` for structured evidence.
 - Review `gateway/trace_exporter.py` for sanitized trace span export without prompt, output, access-reason, or principal identifiers.
+- Review `gateway/otlp_export.py` and `artifacts/otlp-collector-payload.json` for OTLP/HTTP collector-ready trace evidence.
 - Review `gateway/trace_context.py` for W3C trace context parsing and response propagation.
 - Review `gateway/workload_replay.py` and `artifacts/workload-readiness-evidence.json` for aggregate guardrail coverage and local readiness gates.
 - Review `gateway/capacity_plan.py` and `artifacts/capacity-plan-evidence.json` for aggregate synthetic capacity and cost-to-serve modeling.
@@ -89,6 +91,14 @@ uvicorn gateway.app:app --reload
 
 Requests still write the normal audit event, but trace export is intentionally narrower. It records service, route, model, outcome, auth method, estimated input-token count, configured token budget, latency, and trace identifiers; it does not record prompt text, model output, access reason, subject, or principal ID. A checked example is in `artifacts/sanitized-trace-evidence.jsonl`.
 
+OTLP collector payload evidence:
+
+```bash
+python -m gateway.otlp_export --input artifacts/sanitized-trace-evidence.jsonl --output artifacts/otlp-collector-payload.json
+```
+
+The checked OTLP artifact is built from the same sanitized span record and keeps the collector boundary reviewable without sending prompt text, generated output, access reason, subject, or principal identifiers. To send the generated payload to a local collector, add `--endpoint http://localhost:4318/v1/traces --send`.
+
 Capacity plan evidence:
 
 ```bash
@@ -111,7 +121,7 @@ Local dashboard stack:
 docker compose up --build
 ```
 
-Then open Prometheus at `http://localhost:9090` and Grafana at `http://localhost:3000`. The dashboard is provisioned from `deploy/grafana/dashboards/security-gateway.json`.
+Then open Prometheus at `http://localhost:9090` and Grafana at `http://localhost:3000`. The dashboard is provisioned from `deploy/grafana/dashboards/security-gateway.json`, and the collector receives gateway spans on `http://localhost:4318/v1/traces`.
 
 Inference request:
 
@@ -149,6 +159,7 @@ This project covers:
 - W3C trace context propagation for request correlation across a model-serving control plane.
 - Prometheus-compatible metrics for authentication outcomes, policy denials, request/token limiting, input-token throughput, and inference latency.
 - Sanitized trace export that proves request correlation without leaking prompts, outputs, reasons, or principal identifiers.
+- OTLP/HTTP collector export proof that converts sanitized span records into collector-ready trace payloads and can post them to a local collector.
 - Synthetic workload-readiness replay that proves guardrail coverage and latency gates for allowed, policy-denied, rate-limited, and token-budget-limited paths without persisting sensitive request data.
 - Synthetic capacity and cost-to-serve projection that connects policy budgets to modeled request, token, latency, utilization, and cost assumptions.
 - Local Prometheus/Grafana review files for model-access, auth, denial, and latency telemetry.
@@ -160,7 +171,7 @@ This project covers:
 
 - Replace local HS256 review tokens with JWKS-backed OIDC key rotation.
 - Replace in-memory request and token-budget limiters with Redis-backed or gateway-level distributed controls.
-- Upgrade the local trace JSONL proof into full OpenTelemetry SDK export through an OTLP collector, then capture Grafana screenshots from synthetic traffic.
+- Capture Grafana and collector screenshots from synthetic traffic after local docker review.
 - Replace synthetic capacity inputs with measured backend profiles once a real model-serving adapter exists.
 - Extend workload-readiness replay with backend error-rate, queue-depth, and resilience probes once a real serving adapter exists.
 - Add policy-as-code examples, redaction controls, and negative authorization tests.
