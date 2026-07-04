@@ -11,6 +11,7 @@ flowchart LR
     API --> Model["Mock Inference Backend"]
     API --> Audit["JSONL Audit Sink"]
     API --> TraceExport["Sanitized Trace Export"]
+    TraceExport --> Otlp["OTLP Collector Payload"]
     Policy --> Capacity["Synthetic Capacity Plan"]
     Replay["Workload Readiness Replay"] --> Policy
     Replay --> Limiter
@@ -26,12 +27,13 @@ flowchart LR
 - `gateway/rate_limit.py`: in-memory fixed-window request and token-budget limiters.
 - `gateway/token_budget.py`: deterministic estimated input-token accounting.
 - `gateway/audit.py`: structured JSONL audit events with identity and trace evidence.
-- `gateway/trace_exporter.py`: opt-in sanitized trace spans for local OpenTelemetry-shaped evidence.
+- `gateway/trace_exporter.py`: opt-in sanitized trace spans and OTLP/HTTP collector payload generation.
+- `gateway/otlp_export.py`: CLI for converting sanitized trace JSONL into checked collector-ready payloads.
 - `gateway/workload_replay.py`: synthetic aggregate workload replay for guardrail coverage and local readiness gates.
 - `gateway/capacity_plan.py`: synthetic capacity and cost-to-serve planning from model policy and benchmark assumptions.
 - `gateway/mock_inference.py`: synthetic model response with latency metadata.
 - `gateway/registry.py`: demo principals and model policies.
-- `deploy/prometheus` and `deploy/grafana`: local metrics scrape and dashboard provisioning.
+- `deploy/prometheus`, `deploy/otel-collector`, and `deploy/grafana`: local metrics scrape, trace collection, and dashboard provisioning.
 
 ## Production Extensions
 
@@ -39,7 +41,7 @@ flowchart LR
 - Add mTLS between gateway and model backends.
 - Move policy definitions to OPA, Cedar, or a signed config bundle.
 - Replace in-memory request and token-budget limiting with Redis or Envoy global rate limits.
-- Upgrade sanitized trace JSONL to OpenTelemetry SDK export through an OTLP collector while keeping Prometheus metrics for low-cardinality service health.
+- Keep sanitized trace JSONL and OTLP/HTTP collector export aligned while using Prometheus metrics for low-cardinality service health.
 - Capture GPU telemetry from DCGM and attach it to inference metrics.
 - Replace synthetic capacity assumptions with measured backend profiles after real model-serving integration exists.
 - Extend workload replay with backend error-rate, queue-depth, and resilience probes after a real serving adapter exists.
