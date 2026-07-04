@@ -15,7 +15,7 @@ from gateway.rate_limit import FixedWindowRateLimiter, FixedWindowTokenBudgetLim
 from gateway.registry import MODEL_POLICIES
 from gateway.token_budget import estimate_input_tokens
 from gateway.trace_context import RequestTrace, format_traceparent, resolve_trace_context
-from gateway.trace_exporter import JsonlTraceExporter
+from gateway.trace_exporter import build_trace_exporter_from_env
 
 
 class InferenceRequest(BaseModel):
@@ -43,7 +43,7 @@ token_budget_limiter = FixedWindowTokenBudgetLimiter()
 audit_sink = JsonlAuditSink()
 metrics = GatewayMetrics()
 auth_settings = AuthSettings.from_env()
-trace_exporter = JsonlTraceExporter.from_env()
+trace_exporter = build_trace_exporter_from_env()
 
 
 @app.get("/health")
