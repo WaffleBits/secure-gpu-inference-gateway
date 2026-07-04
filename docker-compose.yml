@@ -6,9 +6,20 @@ services:
     environment:
       AUDIT_LOG_PATH: /var/log/gateway/audit.log
       TRACE_EXPORT_PATH: /var/log/gateway/traces.jsonl
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
       ALLOW_DEMO_PRINCIPALS: "true"
     volumes:
       - gateway-logs:/var/log/gateway
+    depends_on:
+      - otel-collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./deploy/otel-collector/collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
   prometheus:
     image: prom/prometheus:latest
     ports:
