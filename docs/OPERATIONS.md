@@ -10,6 +10,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Audit durability: every allowed, policy-denied, and rate-limited inference request writes one audit event.
 - Traceability: every inference response and audit event carries a trace ID for request correlation.
 - Trace privacy: optional trace exports omit prompt text, generated output, access reason, subject, and principal ID.
+- Collector export: sanitized spans can be converted to OTLP/HTTP payloads and sent to a collector without widening the trace data boundary.
 - Budget visibility: request-count and estimated input-token budget decisions are visible in audit events and metrics.
 - Capacity review: model policy changes compare request and input-token limits against a synthetic capacity/cost plan before rollout.
 - Workload readiness: synthetic replay covers allowed, policy-denied, rate-limited, and token-budget-limited paths before policy changes are treated as locally reviewable.
@@ -31,6 +32,10 @@ Set `TRACE_EXPORT_PATH` or `OTEL_TRACE_EXPORT_PATH` to write one sanitized JSONL
 
 The checked example in `artifacts/sanitized-trace-evidence.jsonl` shows the expected shape. `tests/test_trace_exporter.py` covers the privacy boundary.
 
+Set `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTLP_TRACES_ENDPOINT` to send sanitized spans to an OTLP/HTTP collector. The local compose stack points the gateway at `http://otel-collector:4318/v1/traces` and uses `deploy/otel-collector/collector-config.yaml` for debug trace intake.
+
+Run `python -m gateway.otlp_export --input artifacts/sanitized-trace-evidence.jsonl --output artifacts/otlp-collector-payload.json` to regenerate the checked collector payload without starting Docker. Add `--endpoint http://localhost:4318/v1/traces --send` when a local collector is running and you want to post the payload.
+
 ## Capacity Plan Artifact
 
 Run `python -m gateway.capacity_plan --output artifacts/capacity-plan-evidence.json` to regenerate the checked synthetic capacity plan.
@@ -49,7 +54,7 @@ Treat a `hold` readiness status as a blocker for local policy-limit changes unti
 
 ## Local Dashboard
 
-`docker compose up --build` starts the gateway, Prometheus, and Grafana with the dashboard provisioned from `deploy/grafana/dashboards/security-gateway.json`.
+`docker compose up --build` starts the gateway, OpenTelemetry Collector, Prometheus, and Grafana with the dashboard provisioned from `deploy/grafana/dashboards/security-gateway.json`.
 
 Dashboard panels cover:
 
@@ -68,6 +73,7 @@ Dashboard panels cover:
 - p95 latency breaches the 500 ms objective for more than 10 minutes.
 - Gateway health probe fails for 2 consecutive minutes.
 - Audit log write errors appear in application logs.
+- OTLP collector POST failures persist after a collector restart.
 
 ## Incident Runbooks
 
@@ -93,8 +99,10 @@ Dashboard panels cover:
 1. Confirm responses include a `traceparent` header.
 2. Check audit events for `trace_id`, `span_id`, and `parent_span_id`.
 3. If `TRACE_EXPORT_PATH` is set, check the sanitized trace JSONL for the same `trace_id`.
-4. Verify upstream clients are forwarding a valid W3C `traceparent` header.
-5. If missing, the gateway generates trace IDs; correlate from gateway audit outward.
+4. If `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` is set, verify the collector is reachable and accepts `POST /v1/traces`.
+5. Regenerate `artifacts/otlp-collector-payload.json` from the checked trace sample to separate payload-shape problems from live collector reachability.
+6. Verify upstream clients are forwarding a valid W3C `traceparent` header.
+7. If missing, the gateway generates trace IDs; correlate from gateway audit outward.
 
 ### Rate Limit Spike
 
@@ -140,4 +148,5 @@ Dashboard panels cover:
 - Kubernetes readiness and liveness probes should target `/health`.
 - Prometheus should scrape `/metrics` on port 8000.
 - Optional trace export path must point at a writable location and must not be treated as a prompt or output sink.
+- Optional OTLP collector endpoint must point at a trusted collector and must only receive sanitized span attributes.
 - Model policy changes should review both `requests_per_minute` and `input_tokens_per_minute`, then regenerate the capacity plan and workload-readiness artifacts.
