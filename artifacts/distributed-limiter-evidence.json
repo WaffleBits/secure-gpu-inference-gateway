@@ -1,0 +1,301 @@
+{
+  "data_scope": "synthetic limiter migration evidence; excludes request bodies, decoded text, subject identifiers, secrets, access reasons, and production logs",
+  "generated_by": "gateway.distributed_limiter",
+  "observability": {
+    "existing_metrics": [
+      "security_gateway_requests_total",
+      "security_gateway_denials_total",
+      "security_gateway_input_tokens_total"
+    ],
+    "recommended_low_cardinality_labels": [
+      "model_id",
+      "budget_type",
+      "outcome"
+    ]
+  },
+  "readiness_status": "pass",
+  "redis_atomic_script": {
+    "properties": [
+      "single-key atomic increment",
+      "ttl applied on first window increment",
+      "over-limit result returned without payload capture"
+    ],
+    "sha256": "17c63bc82db51970aef6c8871e36c95103841cefb55863d175b3f39a440ef9f0"
+  },
+  "release_gates": [
+    {
+      "expected_rules": 6,
+      "name": "policy_budget_rule_coverage",
+      "observed_rules": 6,
+      "status": "pass"
+    },
+    {
+      "name": "request_and_token_budget_coverage",
+      "observed_budget_types": [
+        "estimated_input_tokens",
+        "request_count"
+      ],
+      "status": "pass"
+    },
+    {
+      "name": "redis_atomic_window_shape",
+      "script_sha256": "17c63bc82db51970aef6c8871e36c95103841cefb55863d175b3f39a440ef9f0",
+      "status": "pass"
+    },
+    {
+      "name": "public_safe_artifact",
+      "omitted_categories": [
+        "request payloads",
+        "model responses",
+        "subject identifiers",
+        "access justification text",
+        "auth material",
+        "production logs"
+      ],
+      "status": "pass"
+    }
+  ],
+  "rollout_recommendation": "ready_for_redis_or_envoy_integration_spike",
+  "rule_count": 6,
+  "rules": [
+    {
+      "budget_type": "request_count",
+      "denial_outcome": "rate_limited",
+      "envoy_descriptor": {
+        "entries": [
+          {
+            "key": "service",
+            "value": "secure-gpu-inference-gateway"
+          },
+          {
+            "key": "model_id",
+            "value": "benchmark-echo"
+          },
+          {
+            "key": "budget_type",
+            "value": "request_count"
+          }
+        ],
+        "limit_per_unit": 120,
+        "unit": "minute"
+      },
+      "existing_metric": "security_gateway_requests_total",
+      "limit": 120,
+      "model_id": "benchmark-echo",
+      "redis_key_template": "sgig:{environment}:{model_id}:{budget_type}:{caller_hash}:{window_epoch_minute}",
+      "window_seconds": 60
+    },
+    {
+      "budget_type": "estimated_input_tokens",
+      "denial_outcome": "token_budget_limited",
+      "envoy_descriptor": {
+        "entries": [
+          {
+            "key": "service",
+            "value": "secure-gpu-inference-gateway"
+          },
+          {
+            "key": "model_id",
+            "value": "benchmark-echo"
+          },
+          {
+            "key": "budget_type",
+            "value": "estimated_input_tokens"
+          }
+        ],
+        "limit_per_unit": 20000,
+        "unit": "minute"
+      },
+      "existing_metric": "security_gateway_input_tokens_total",
+      "limit": 20000,
+      "model_id": "benchmark-echo",
+      "redis_key_template": "sgig:{environment}:{model_id}:{budget_type}:{caller_hash}:{window_epoch_minute}",
+      "window_seconds": 60
+    },
+    {
+      "budget_type": "request_count",
+      "denial_outcome": "rate_limited",
+      "envoy_descriptor": {
+        "entries": [
+          {
+            "key": "service",
+            "value": "secure-gpu-inference-gateway"
+          },
+          {
+            "key": "model_id",
+            "value": "mission-summarizer"
+          },
+          {
+            "key": "budget_type",
+            "value": "request_count"
+          }
+        ],
+        "limit_per_unit": 30,
+        "unit": "minute"
+      },
+      "existing_metric": "security_gateway_requests_total",
+      "limit": 30,
+      "model_id": "mission-summarizer",
+      "redis_key_template": "sgig:{environment}:{model_id}:{budget_type}:{caller_hash}:{window_epoch_minute}",
+      "window_seconds": 60
+    },
+    {
+      "budget_type": "estimated_input_tokens",
+      "denial_outcome": "token_budget_limited",
+      "envoy_descriptor": {
+        "entries": [
+          {
+            "key": "service",
+            "value": "secure-gpu-inference-gateway"
+          },
+          {
+            "key": "model_id",
+            "value": "mission-summarizer"
+          },
+          {
+            "key": "budget_type",
+            "value": "estimated_input_tokens"
+          }
+        ],
+        "limit_per_unit": 8000,
+        "unit": "minute"
+      },
+      "existing_metric": "security_gateway_input_tokens_total",
+      "limit": 8000,
+      "model_id": "mission-summarizer",
+      "redis_key_template": "sgig:{environment}:{model_id}:{budget_type}:{caller_hash}:{window_epoch_minute}",
+      "window_seconds": 60
+    },
+    {
+      "budget_type": "request_count",
+      "denial_outcome": "rate_limited",
+      "envoy_descriptor": {
+        "entries": [
+          {
+            "key": "service",
+            "value": "secure-gpu-inference-gateway"
+          },
+          {
+            "key": "model_id",
+            "value": "threat-triage"
+          },
+          {
+            "key": "budget_type",
+            "value": "request_count"
+          }
+        ],
+        "limit_per_unit": 20,
+        "unit": "minute"
+      },
+      "existing_metric": "security_gateway_requests_total",
+      "limit": 20,
+      "model_id": "threat-triage",
+      "redis_key_template": "sgig:{environment}:{model_id}:{budget_type}:{caller_hash}:{window_epoch_minute}",
+      "window_seconds": 60
+    },
+    {
+      "budget_type": "estimated_input_tokens",
+      "denial_outcome": "token_budget_limited",
+      "envoy_descriptor": {
+        "entries": [
+          {
+            "key": "service",
+            "value": "secure-gpu-inference-gateway"
+          },
+          {
+            "key": "model_id",
+            "value": "threat-triage"
+          },
+          {
+            "key": "budget_type",
+            "value": "estimated_input_tokens"
+          }
+        ],
+        "limit_per_unit": 6000,
+        "unit": "minute"
+      },
+      "existing_metric": "security_gateway_input_tokens_total",
+      "limit": 6000,
+      "model_id": "threat-triage",
+      "redis_key_template": "sgig:{environment}:{model_id}:{budget_type}:{caller_hash}:{window_epoch_minute}",
+      "window_seconds": 60
+    }
+  ],
+  "sample_decisions": [
+    {
+      "allowed": true,
+      "budget_type": "request_count",
+      "caller_hash_example": "1b7c3b0124a15e1b",
+      "limit": 120,
+      "model_id": "benchmark-echo",
+      "window_cost": 1
+    },
+    {
+      "allowed": false,
+      "budget_type": "request_count",
+      "caller_hash_example": "f96f9822b6789bc8",
+      "denial_outcome": "rate_limited",
+      "limit": 120,
+      "model_id": "benchmark-echo",
+      "window_cost": 121
+    },
+    {
+      "allowed": true,
+      "budget_type": "estimated_input_tokens",
+      "caller_hash_example": "b07357577bb92f77",
+      "limit": 20000,
+      "model_id": "benchmark-echo",
+      "window_cost": 64
+    },
+    {
+      "allowed": false,
+      "budget_type": "estimated_input_tokens",
+      "caller_hash_example": "18d87739380ab485",
+      "denial_outcome": "token_budget_limited",
+      "limit": 20000,
+      "model_id": "benchmark-echo",
+      "window_cost": 20001
+    },
+    {
+      "allowed": true,
+      "budget_type": "request_count",
+      "caller_hash_example": "aadd189d466799a1",
+      "limit": 30,
+      "model_id": "mission-summarizer",
+      "window_cost": 1
+    },
+    {
+      "allowed": false,
+      "budget_type": "request_count",
+      "caller_hash_example": "bc039d19142826be",
+      "denial_outcome": "rate_limited",
+      "limit": 30,
+      "model_id": "mission-summarizer",
+      "window_cost": 31
+    },
+    {
+      "allowed": true,
+      "budget_type": "estimated_input_tokens",
+      "caller_hash_example": "43bc083f9e77eb74",
+      "limit": 8000,
+      "model_id": "mission-summarizer",
+      "window_cost": 64
+    },
+    {
+      "allowed": false,
+      "budget_type": "estimated_input_tokens",
+      "caller_hash_example": "059bedc453cc0bc8",
+      "denial_outcome": "token_budget_limited",
+      "limit": 8000,
+      "model_id": "mission-summarizer",
+      "window_cost": 8001
+    }
+  ],
+  "scenario_name": "distributed_request_token_limiter_readiness",
+  "schema_version": 1,
+  "target_backends": [
+    "redis_fixed_window_lua",
+    "envoy_global_rate_limit_descriptors"
+  ],
+  "window_seconds": 60
+}
