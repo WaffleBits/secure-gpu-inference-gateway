@@ -12,6 +12,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Trace privacy: optional trace exports omit prompt text, generated output, access reason, subject, and principal ID.
 - Collector export: sanitized spans can be converted to OTLP/HTTP payloads and sent to a collector without widening the trace data boundary.
 - Budget visibility: request-count and estimated input-token budget decisions are visible in audit events and metrics.
+- Distributed limiter review: every model policy has request-count and estimated input-token rules mapped to a Redis/Envoy-style external limiter plan before replacing local fixed-window controls.
 - Capacity review: model policy changes compare request and input-token limits against a synthetic capacity/cost plan before rollout.
 - Workload readiness: synthetic replay covers allowed, policy-denied, rate-limited, and token-budget-limited paths before policy changes are treated as locally reviewable.
 
@@ -51,6 +52,14 @@ Run `python -m gateway.workload_replay --output artifacts/workload-readiness-evi
 The replay drives aggregate synthetic traffic through the same role policy, request-limit, and token-budget logic used by the gateway. The report records outcome coverage, allowed-path p95 latency, model-level policy pressure, and release-gate status. It deliberately excludes request bodies, decoded text, identities, secrets, access reasons, and production logs.
 
 Treat a `hold` readiness status as a blocker for local policy-limit changes until the missing guardrail path or latency regression is understood.
+
+## Distributed Limiter Readiness Artifact
+
+Run `python -m gateway.distributed_limiter --output artifacts/distributed-limiter-evidence.json` to regenerate the checked distributed-limiter report.
+
+The report maps each configured model policy to request-count and estimated-input-token rules, records the Redis fixed-window atomic script hash, shows Envoy global-rate-limit descriptor shape, and checks rule coverage before a live external limiter is introduced. It is migration evidence only; the running demo still uses in-memory controls so reviewers can exercise the project without Redis, Envoy, cloud credentials, or production traffic.
+
+Use the artifact before replacing the local limiter. Treat missing model coverage, missing token/request budget coverage, or a non-atomic script shape as a rollout blocker.
 
 ## Local Dashboard
 
@@ -124,11 +133,13 @@ Dashboard panels cover:
 
 1. Regenerate `artifacts/capacity-plan-evidence.json`.
 2. Regenerate `artifacts/workload-readiness-evidence.json`.
-3. Confirm the target model status is `within_synthetic_capacity`.
-4. Confirm workload readiness remains `pass`.
-5. Compare `policy_request_utilization` and `policy_input_token_utilization` against the intended rollout margin.
-6. Keep the prior policy available for rollback if the change increases either utilization materially.
-7. Record the policy diff, modeled capacity result, workload replay result, and rollback owner in the release note.
+3. Regenerate `artifacts/distributed-limiter-evidence.json` if the policy changes request or token budgets.
+4. Confirm the target model status is `within_synthetic_capacity`.
+5. Confirm workload readiness remains `pass`.
+6. Confirm distributed-limiter readiness remains `pass`.
+7. Compare `policy_request_utilization` and `policy_input_token_utilization` against the intended rollout margin.
+8. Keep the prior policy available for rollback if the change increases either utilization materially.
+9. Record the policy diff, modeled capacity result, workload replay result, distributed limiter rule coverage, and rollback owner in the release note.
 
 ### Latency Regression
 
@@ -150,3 +161,4 @@ Dashboard panels cover:
 - Optional trace export path must point at a writable location and must not be treated as a prompt or output sink.
 - Optional OTLP collector endpoint must point at a trusted collector and must only receive sanitized span attributes.
 - Model policy changes should review both `requests_per_minute` and `input_tokens_per_minute`, then regenerate the capacity plan and workload-readiness artifacts.
+- External limiter migrations should regenerate the distributed-limiter artifact and confirm every model has request-count and estimated-input-token coverage.

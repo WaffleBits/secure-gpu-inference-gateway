@@ -59,9 +59,11 @@ Status: partially implemented.
 - Keep sanitized trace JSONL export opt-in and free of prompt text, model outputs, access reason, subjects, and principal IDs.
 - Keep OTLP/HTTP collector payload generation tied to the same sanitized span attributes.
 - Keep estimated input-token budget metrics and audit fields free of prompt text and principal-identifying trace attributes.
+- Keep distributed-limiter readiness evidence tied to configured request and token budgets before introducing Redis or Envoy global rate-limit state.
 - Keep the synthetic capacity plan artifact aggregate-only and tied to configured policy budgets.
 - Keep the workload-readiness replay aggregate-only and tied to allowed, policy-denied, rate-limited, and token-budget-limited paths.
 - Add Grafana and collector screenshots using synthetic traffic.
+- Wire the distributed-limiter readiness artifact into a live Redis or Envoy integration after the rule and key-shape review stays green.
 - Add SLO burn-rate alert examples for auth failures, policy denials, rate limiting, and inference latency.
 - Add incident exercises for token abuse, model access denial spikes, audit sink failure, and backend saturation.
 
