@@ -1,0 +1,243 @@
+{
+  "data_scope": "synthetic aggregate deployment review; excludes request bodies, decoded text, identities, secrets, access reasons, and production logs",
+  "generated_by": "gateway.deployment_readiness",
+  "phases": [
+    {
+      "capacity_reservation_fraction": 0.05,
+      "max_scheduled_policy_utilization": 0.002385,
+      "models": [
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "benchmark-echo",
+          "reserved_input_tokens_per_minute": 43680.0,
+          "reserved_requests_per_minute": 264.0,
+          "scheduled_policy_input_token_utilization": 0.001145,
+          "scheduled_policy_request_utilization": 0.001136
+        },
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "mission-summarizer",
+          "reserved_input_tokens_per_minute": 8385.882,
+          "reserved_requests_per_minute": 31.765,
+          "scheduled_policy_input_token_utilization": 0.002385,
+          "scheduled_policy_request_utilization": 0.002361
+        },
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "threat-triage",
+          "reserved_input_tokens_per_minute": 6538.378,
+          "reserved_requests_per_minute": 21.95,
+          "scheduled_policy_input_token_utilization": 0.002294,
+          "scheduled_policy_request_utilization": 0.002278
+        }
+      ],
+      "name": "shadow_validation",
+      "required_evidence": [
+        "artifacts/workload-readiness-evidence.json",
+        "artifacts/capacity-plan-evidence.json"
+      ],
+      "rollback_trigger": "candidate shadow mismatches baseline or readiness gates regress",
+      "traffic_fraction": 0.0,
+      "validation_mode": "shadow"
+    },
+    {
+      "capacity_reservation_fraction": 0.15,
+      "max_scheduled_policy_utilization": 0.007155,
+      "models": [
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "benchmark-echo",
+          "reserved_input_tokens_per_minute": 131040.0,
+          "reserved_requests_per_minute": 792.0,
+          "scheduled_policy_input_token_utilization": 0.003434,
+          "scheduled_policy_request_utilization": 0.003409
+        },
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "mission-summarizer",
+          "reserved_input_tokens_per_minute": 25157.647,
+          "reserved_requests_per_minute": 95.294,
+          "scheduled_policy_input_token_utilization": 0.007155,
+          "scheduled_policy_request_utilization": 0.007083
+        },
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "threat-triage",
+          "reserved_input_tokens_per_minute": 19615.135,
+          "reserved_requests_per_minute": 65.851,
+          "scheduled_policy_input_token_utilization": 0.006882,
+          "scheduled_policy_request_utilization": 0.006834
+        }
+      ],
+      "name": "canary_10_percent",
+      "required_evidence": [
+        "artifacts/workload-readiness-evidence.json",
+        "artifacts/distributed-limiter-evidence.json"
+      ],
+      "rollback_trigger": "p95 latency, denial rate, or limiter outcome deviates from baseline",
+      "traffic_fraction": 0.1,
+      "validation_mode": "canary"
+    },
+    {
+      "capacity_reservation_fraction": 0.6,
+      "max_scheduled_policy_utilization": 0.028619,
+      "models": [
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "benchmark-echo",
+          "reserved_input_tokens_per_minute": 524160.0,
+          "reserved_requests_per_minute": 3168.0,
+          "scheduled_policy_input_token_utilization": 0.013736,
+          "scheduled_policy_request_utilization": 0.013636
+        },
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "mission-summarizer",
+          "reserved_input_tokens_per_minute": 100630.588,
+          "reserved_requests_per_minute": 381.176,
+          "scheduled_policy_input_token_utilization": 0.028619,
+          "scheduled_policy_request_utilization": 0.028333
+        },
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "threat-triage",
+          "reserved_input_tokens_per_minute": 78460.541,
+          "reserved_requests_per_minute": 263.403,
+          "scheduled_policy_input_token_utilization": 0.02753,
+          "scheduled_policy_request_utilization": 0.027335
+        }
+      ],
+      "name": "staged_rollout_50_percent",
+      "required_evidence": [
+        "artifacts/capacity-plan-evidence.json",
+        "artifacts/distributed-limiter-evidence.json"
+      ],
+      "rollback_trigger": "capacity, token budget, or guardrail coverage moves outside gates",
+      "traffic_fraction": 0.5,
+      "validation_mode": "progressive_rollout"
+    },
+    {
+      "capacity_reservation_fraction": 1.0,
+      "max_scheduled_policy_utilization": 0.047699,
+      "models": [
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "benchmark-echo",
+          "reserved_input_tokens_per_minute": 873600.0,
+          "reserved_requests_per_minute": 5280.0,
+          "scheduled_policy_input_token_utilization": 0.022894,
+          "scheduled_policy_request_utilization": 0.022727
+        },
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "mission-summarizer",
+          "reserved_input_tokens_per_minute": 167717.647,
+          "reserved_requests_per_minute": 635.294,
+          "scheduled_policy_input_token_utilization": 0.047699,
+          "scheduled_policy_request_utilization": 0.047222
+        },
+        {
+          "capacity_status": "within_synthetic_capacity",
+          "model_id": "threat-triage",
+          "reserved_input_tokens_per_minute": 130767.568,
+          "reserved_requests_per_minute": 439.005,
+          "scheduled_policy_input_token_utilization": 0.045883,
+          "scheduled_policy_request_utilization": 0.045558
+        }
+      ],
+      "name": "full_rollout",
+      "required_evidence": [
+        "artifacts/workload-readiness-evidence.json",
+        "artifacts/capacity-plan-evidence.json",
+        "artifacts/distributed-limiter-evidence.json"
+      ],
+      "rollback_trigger": "SLO breach, audit gap, or limiter migration error",
+      "traffic_fraction": 1.0,
+      "validation_mode": "full_review_release"
+    }
+  ],
+  "readiness_status": "pass",
+  "release_gates": [
+    {
+      "artifact": "artifacts/capacity-plan-evidence.json",
+      "name": "capacity_plan_passed",
+      "status": "pass"
+    },
+    {
+      "artifact": "artifacts/workload-readiness-evidence.json",
+      "name": "workload_readiness_passed",
+      "status": "pass"
+    },
+    {
+      "artifact": "artifacts/distributed-limiter-evidence.json",
+      "name": "distributed_limiter_evidence_passed",
+      "status": "pass"
+    },
+    {
+      "name": "phased_rollout_shape",
+      "phase_names": [
+        "shadow_validation",
+        "canary_10_percent",
+        "staged_rollout_50_percent",
+        "full_rollout"
+      ],
+      "status": "pass"
+    },
+    {
+      "name": "staged_capacity_utilization",
+      "observed_max": 0.047699,
+      "status": "pass",
+      "threshold": 0.8
+    },
+    {
+      "name": "rollback_path_defined",
+      "rollback_trigger_count": 4,
+      "status": "pass"
+    },
+    {
+      "name": "public_safe_artifact",
+      "omitted_categories": [
+        "request payloads",
+        "model responses",
+        "identity fields",
+        "access justification text",
+        "auth material",
+        "production logs"
+      ],
+      "status": "pass"
+    }
+  ],
+  "rollback_actions": [
+    "restore the prior model policy and limiter descriptors",
+    "disable the candidate route or deployment target",
+    "keep prior capacity, workload, and limiter artifacts attached to the release note"
+  ],
+  "rollout_recommendation": "ready_for_local_deployment_review",
+  "scenario_name": "synthetic_inference_gateway_deployment_readiness",
+  "schema_version": 1,
+  "source_evidence": {
+    "capacity_plan": {
+      "artifact": "artifacts/capacity-plan-evidence.json",
+      "model_count": 3,
+      "status": "pass"
+    },
+    "distributed_limiter": {
+      "artifact": "artifacts/distributed-limiter-evidence.json",
+      "rule_count": 6,
+      "status": "pass"
+    },
+    "workload_readiness": {
+      "artifact": "artifacts/workload-readiness-evidence.json",
+      "observed_outcomes": [
+        "allowed",
+        "policy_denied",
+        "rate_limited",
+        "token_budget_limited"
+      ],
+      "status": "pass"
+    }
+  },
+  "thresholds": {
+    "max_phase_policy_utilization": 0.8
+  }
+}

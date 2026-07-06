@@ -48,6 +48,7 @@ Status: planned.
 - Generate an SBOM in CI.
 - Add dependency and container image scanning.
 - Add Kubernetes admission-control notes for non-root containers, read-only filesystem posture, and resource limits.
+- Keep deployment-readiness evidence tied to capacity, workload, limiter, shadow, canary, staged rollout, and rollback checks before adding live deployment automation.
 - Add Terraform or IaC examples only after the runtime controls are credible.
 - Document which checks are real CI gates versus roadmap items.
 
@@ -62,6 +63,7 @@ Status: partially implemented.
 - Keep distributed-limiter readiness evidence tied to configured request and token budgets before introducing Redis or Envoy global rate-limit state.
 - Keep the synthetic capacity plan artifact aggregate-only and tied to configured policy budgets.
 - Keep the workload-readiness replay aggregate-only and tied to allowed, policy-denied, rate-limited, and token-budget-limited paths.
+- Keep the deployment-readiness artifact aggregate-only and tied to capacity, workload, distributed-limiter, staged rollout, and rollback gates.
 - Add Grafana and collector screenshots using synthetic traffic.
 - Wire the distributed-limiter readiness artifact into a live Redis or Envoy integration after the rule and key-shape review stays green.
 - Add SLO burn-rate alert examples for auth failures, policy denials, rate limiting, and inference latency.
