@@ -15,6 +15,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Distributed limiter review: every model policy has request-count and estimated input-token rules mapped to a Redis/Envoy-style external limiter plan before replacing local fixed-window controls.
 - Capacity review: model policy changes compare request and input-token limits against a synthetic capacity/cost plan before rollout.
 - Workload readiness: synthetic replay covers allowed, policy-denied, rate-limited, and token-budget-limited paths before policy changes are treated as locally reviewable.
+- Deployment readiness: local release reviews compose capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates before serving-path changes are treated as locally reviewable.
 
 ## Metrics
 
@@ -61,6 +62,14 @@ The report maps each configured model policy to request-count and estimated-inpu
 
 Use the artifact before replacing the local limiter. Treat missing model coverage, missing token/request budget coverage, or a non-atomic script shape as a rollout blocker.
 
+## Deployment Readiness Artifact
+
+Run `python -m gateway.deployment_readiness --output artifacts/deployment-readiness-evidence.json` to regenerate the checked deployment-readiness report.
+
+The report composes `artifacts/capacity-plan-evidence.json`, `artifacts/workload-readiness-evidence.json`, and `artifacts/distributed-limiter-evidence.json` into a synthetic release review. It records shadow, canary, staged rollout, and full rollout phases; per-model reserved capacity; rollback triggers; and release gates. It is deployment review evidence only and deliberately excludes request bodies, decoded text, identities, secrets, access reasons, and production logs.
+
+Treat a `hold` deployment readiness status as a blocker for local serving-path changes until the underlying capacity, workload, limiter, phase-shape, or rollback gate is understood.
+
 ## Local Dashboard
 
 `docker compose up --build` starts the gateway, OpenTelemetry Collector, Prometheus, and Grafana with the dashboard provisioned from `deploy/grafana/dashboards/security-gateway.json`.
@@ -83,6 +92,7 @@ Dashboard panels cover:
 - Gateway health probe fails for 2 consecutive minutes.
 - Audit log write errors appear in application logs.
 - OTLP collector POST failures persist after a collector restart.
+- Deployment-readiness gate reports `hold` before a model-policy or serving-path change.
 
 ## Incident Runbooks
 
@@ -134,12 +144,14 @@ Dashboard panels cover:
 1. Regenerate `artifacts/capacity-plan-evidence.json`.
 2. Regenerate `artifacts/workload-readiness-evidence.json`.
 3. Regenerate `artifacts/distributed-limiter-evidence.json` if the policy changes request or token budgets.
-4. Confirm the target model status is `within_synthetic_capacity`.
-5. Confirm workload readiness remains `pass`.
-6. Confirm distributed-limiter readiness remains `pass`.
-7. Compare `policy_request_utilization` and `policy_input_token_utilization` against the intended rollout margin.
-8. Keep the prior policy available for rollback if the change increases either utilization materially.
-9. Record the policy diff, modeled capacity result, workload replay result, distributed limiter rule coverage, and rollback owner in the release note.
+4. Regenerate `artifacts/deployment-readiness-evidence.json`.
+5. Confirm the target model status is `within_synthetic_capacity`.
+6. Confirm workload readiness remains `pass`.
+7. Confirm distributed-limiter readiness remains `pass`.
+8. Confirm deployment readiness remains `pass`.
+9. Compare `policy_request_utilization`, `policy_input_token_utilization`, and `staged_capacity_utilization` against the intended rollout margin.
+10. Keep the prior policy available for rollback if the change increases any utilization materially.
+11. Record the policy diff, modeled capacity result, workload replay result, distributed limiter rule coverage, deployment-readiness phase, and rollback owner in the release note.
 
 ### Latency Regression
 
@@ -162,3 +174,4 @@ Dashboard panels cover:
 - Optional OTLP collector endpoint must point at a trusted collector and must only receive sanitized span attributes.
 - Model policy changes should review both `requests_per_minute` and `input_tokens_per_minute`, then regenerate the capacity plan and workload-readiness artifacts.
 - External limiter migrations should regenerate the distributed-limiter artifact and confirm every model has request-count and estimated-input-token coverage.
+- Serving-path or policy rollout reviews should regenerate the deployment-readiness artifact and confirm capacity, workload, limiter, phase-shape, capacity-utilization, and rollback gates remain `pass`.
