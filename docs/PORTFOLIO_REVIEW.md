@@ -17,10 +17,12 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - `gateway/otlp_export.py`: CLI path for generating or sending collector-ready trace payloads.
 - `gateway/workload_replay.py`: deterministic aggregate replay for allowed, denied, request-limited, and token-budget-limited paths.
 - `gateway/capacity_plan.py`: synthetic capacity and cost-to-serve projection tied to model policies.
+- `gateway/deployment_readiness.py`: synthetic deployment-readiness review that composes capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates.
 - `gateway/mock_inference.py`: reviewable model-serving boundary without private models or GPU hardware.
 - `artifacts/workload-readiness-evidence.json`: checked readiness artifact for guardrail coverage, latency gates, and model pressure summaries.
 - `artifacts/capacity-plan-evidence.json`: checked aggregate capacity artifact for local review.
 - `artifacts/distributed-limiter-evidence.json`: checked Redis/Envoy limiter migration artifact with rule coverage and public-safe release gates.
+- `artifacts/deployment-readiness-evidence.json`: checked deployment-readiness artifact for capacity-aware release phase review and rollback triggers.
 - `artifacts/otlp-collector-payload.json`: checked collector-ready trace payload generated from sanitized span evidence.
 - `deploy/otel-collector/collector-config.yaml`: local collector intake for OTLP/HTTP trace review.
 - `deploy/grafana/dashboards/security-gateway.json`: dashboard queries for request outcomes, latency, auth, denial, and model policy review.
@@ -43,6 +45,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Mapping every configured request and token-budget policy to a Redis/Envoy-style external limiter plan before introducing live distributed state.
 - Replaying synthetic workload pressure through policy, request-limit, and token-budget controls without storing request bodies, identities, or outputs.
 - Connecting model policy limits to synthetic capacity, utilization, latency, and cost-to-serve estimates without using private workload data.
+- Composing capacity, workload, and limiter evidence into a staged deployment-readiness artifact with shadow, canary, full rollout, and rollback checks.
 - Providing Prometheus/Grafana review files that turn gateway metrics into operational panels.
 - Designing a mockable inference boundary that can later route to real model-serving backends.
 - Showing Kubernetes deployment thinking without requiring cloud credentials.
@@ -53,7 +56,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 
 - Security infrastructure: JWT authentication, authorization, auditability, request/token limiting, and abuse-control thinking.
 - AI platform engineering: protected inference paths, model routing, operational metrics, and service boundaries.
-- Infrastructure/SRE: health probes, Prometheus metrics, trace propagation, workload-readiness gates, SLOs, and incident runbooks.
+- Infrastructure/SRE: health probes, Prometheus metrics, trace propagation, workload-readiness gates, deployment-readiness gates, SLOs, and incident runbooks.
 - Backend engineering: FastAPI structure, clear modules, focused tests, and production extension points.
 
 ## Gaps Worth Closing Next
@@ -63,7 +66,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Wire the checked Redis/Envoy limiter plan into live distributed limiter controls.
 - Capture collector and Grafana screenshots from synthetic traffic.
 - Replace synthetic capacity profiles with measured backend profiles after model-serving integration exists.
-- Extend workload-readiness replay with backend error-rate, queue-depth, and resilience probes after model-serving integration exists.
+- Extend workload-readiness and deployment-readiness replay with backend error-rate, queue-depth, and resilience probes after model-serving integration exists.
 - Add policy-as-code and redaction examples with positive and negative test cases.
 - Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
 - Add SOC2/FedRAMP-inspired control mapping notes without implying certification or production authorization.
