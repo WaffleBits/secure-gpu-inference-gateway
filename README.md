@@ -2,11 +2,11 @@
 
 Security-focused AI infrastructure demo for OIDC/JWT-authenticated model access, role-based authorization, per-model request and token-budget limits, distributed-limiter readiness evidence, deployment-readiness evidence, trace-aware audit logs, OTLP collector-ready trace export, synthetic workload-readiness replay, synthetic capacity/cost planning, and policy-driven inference routing.
 
-This repository uses a mock inference backend so the security and infrastructure logic can be reviewed without GPU hardware, model weights, proprietary data, or cloud credentials.
+This repository uses a mock inference backend so the security and infrastructure logic can be reviewed without GPU hardware, model weights, or cloud credentials.
 
 ## Why This Exists
 
-AI infrastructure teams need more than a model endpoint. They need controls around who can call which model, why the call is allowed, how abuse is throttled, and what evidence exists after the fact. This project models that control plane in a public-safe way.
+AI infrastructure teams need more than a model endpoint. They need controls around who can call which model, why the call is allowed, how abuse is throttled, and what evidence exists after the fact. This project models that control plane.
 
 This is the flagship portfolio project for the platform-security-to-AI-infrastructure lane. It is meant to demonstrate security software around model-serving systems: identity, authorization, policy decisions, audit evidence, rate limits, observability, deployment posture, and a credible roadmap toward redaction, policy-as-code, supply-chain checks, and compliance evidence automation.
 
@@ -133,7 +133,7 @@ Deployment readiness evidence:
 python -m gateway.deployment_readiness --output artifacts/deployment-readiness-evidence.json
 ```
 
-The checked deployment artifact composes the capacity plan, workload-readiness replay, and distributed-limiter evidence into a public-safe release review. It records shadow, canary, staged rollout, and full rollout phases; capacity reservation math; rollback triggers; and release gates without request bodies, decoded text, identities, secrets, access reasons, or production logs.
+The checked deployment artifact composes the capacity plan, workload-readiness replay, and distributed-limiter evidence into a release review. It records shadow, canary, staged rollout, and full rollout phases; capacity reservation math; rollback triggers; and release gates without request bodies, decoded text, identities, secrets, access reasons, or production logs.
 
 Local dashboard stack:
 
@@ -161,7 +161,7 @@ set OIDC_JWT_HS256_SECRET=local-review-secret
 set ALLOW_DEMO_PRINCIPALS=false
 ```
 
-Then send an `Authorization: Bearer <token>` header with `sub`, `iss`, `aud`, `exp`, and a `roles` or `scope` claim matching the target model policy. The verifier uses HS256 for public-safe local testing; production OIDC deployments should use JWKS-backed asymmetric signing and key rotation.
+Then send an `Authorization: Bearer <token>` header with `sub`, `iss`, `aud`, `exp`, and a `roles` or `scope` claim matching the target model policy. The verifier uses HS256 for local testing; production OIDC deployments should use JWKS-backed asymmetric signing and key rotation.
 
 ## Test
 
@@ -174,7 +174,7 @@ python -m unittest discover -s tests
 This project covers:
 
 - Access-control thinking around model-serving systems.
-- Public-safe audit and policy design.
+- Audit and policy design.
 - Issuer-bound JWT validation, role claim mapping, and demo-auth disablement.
 - W3C trace context propagation for request correlation across a model-serving control plane.
 - Prometheus-compatible metrics for authentication outcomes, policy denials, request/token limiting, input-token throughput, and inference latency.
@@ -201,6 +201,3 @@ This project covers:
 - Add SOC2/FedRAMP-inspired control mapping notes without claiming certification or production authorization.
 - Replace the `emptyDir` demo audit volume with durable log shipping or object storage retention.
 
-## Public-Safe Scope
-
-All users, models, prompts, and outputs are synthetic. Do not add secrets, customer data, real tokens, production logs, model weights, or sensitive operational details.
