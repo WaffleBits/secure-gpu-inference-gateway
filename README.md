@@ -1,6 +1,6 @@
 # Secure GPU Inference Gateway
 
-Security-focused AI infrastructure demo for OIDC/JWT-authenticated model access, role-based authorization, per-model request and token-budget limits, distributed-limiter readiness evidence, deployment-readiness evidence, trace-aware audit logs, OTLP collector-ready trace export, synthetic workload-readiness replay, synthetic capacity/cost planning, and policy-driven inference routing.
+Security-focused AI infrastructure demo for OIDC/JWT-authenticated model access, role-based authorization, per-model request and token-budget limits, distributed-limiter readiness evidence, deployment-readiness evidence, resilience-drill evidence, trace-aware audit logs, OTLP collector-ready trace export, synthetic workload-readiness replay, synthetic capacity/cost planning, and policy-driven inference routing.
 
 This repository uses a mock inference backend so the security and infrastructure logic can be reviewed without GPU hardware, model weights, proprietary data, or cloud credentials.
 
@@ -19,6 +19,7 @@ This is the flagship portfolio project for the platform-security-to-AI-infrastru
 - Fixed-window request and estimated input-token limiting by principal and model.
 - Distributed-limiter readiness artifact that maps per-model request and token budgets to Redis/Envoy-style global controls.
 - Deployment-readiness artifact that composes capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates.
+- Resilience-drill artifact that checks synthetic latency spike, backend error burst, queue saturation, and audit backpressure probes against rollout gates.
 - Structured JSONL audit logging with authentication and trace context evidence.
 - W3C `traceparent` propagation for OpenTelemetry-compatible request correlation.
 - Prometheus-compatible `/metrics` endpoint for authentication, policy, limiter, token-throughput, and latency telemetry.
@@ -52,6 +53,7 @@ Relevant areas:
 - Review `gateway/rate_limit.py` and `gateway/token_budget.py` for request-count and token-budget limiter behavior.
 - Review `gateway/distributed_limiter.py` and `artifacts/distributed-limiter-evidence.json` for Redis/Envoy migration readiness evidence.
 - Review `gateway/deployment_readiness.py` and `artifacts/deployment-readiness-evidence.json` for capacity-aware shadow, canary, staged rollout, and rollback readiness evidence.
+- Review `gateway/resilience_drill.py` and `artifacts/resilience-drill-evidence.json` for synthetic backend degradation and recovery drill evidence.
 - Review `gateway/metrics.py` and `/metrics` for Prometheus-compatible operational telemetry.
 - Review `gateway/audit.py` for structured evidence.
 - Review `gateway/trace_exporter.py` for sanitized trace span export without prompt, output, access-reason, or principal identifiers.
@@ -135,6 +137,14 @@ python -m gateway.deployment_readiness --output artifacts/deployment-readiness-e
 
 The checked deployment artifact composes the capacity plan, workload-readiness replay, and distributed-limiter evidence into a public-safe release review. It records shadow, canary, staged rollout, and full rollout phases; capacity reservation math; rollback triggers; and release gates without request bodies, decoded text, identities, secrets, access reasons, or production logs.
 
+Resilience drill evidence:
+
+```bash
+python -m gateway.resilience_drill --output artifacts/resilience-drill-evidence.json
+```
+
+The checked resilience artifact composes workload and deployment evidence with synthetic backend degradation probes. It records latency-spike, error-burst, queue-saturation, and audit-backpressure checks, detection signals, mitigation paths, rollback actions, and recovery gates without request bodies, decoded text, identities, secrets, access reasons, or production logs.
+
 Local dashboard stack:
 
 ```bash
@@ -182,6 +192,7 @@ This project covers:
 - OTLP/HTTP collector export proof that converts sanitized span records into collector-ready trace payloads and can post them to a local collector.
 - Distributed-limiter readiness evidence that connects configured request/token budgets to Redis atomic-window and Envoy descriptor shapes before a live external limiter is introduced.
 - Deployment-readiness evidence that connects capacity planning, workload guardrail coverage, distributed limiter coverage, staged rollout phases, and rollback triggers before policy or serving-path changes are treated as locally reviewable.
+- Resilience-drill evidence that connects workload and deployment readiness to synthetic latency spike, backend error burst, queue saturation, audit backpressure, mitigation, and rollback checks.
 - Synthetic workload-readiness replay that proves guardrail coverage and latency gates for allowed, policy-denied, rate-limited, and token-budget-limited paths without persisting sensitive request data.
 - Synthetic capacity and cost-to-serve projection that connects policy budgets to modeled request, token, latency, utilization, and cost assumptions.
 - Local Prometheus/Grafana review files for model-access, auth, denial, and latency telemetry.
@@ -195,7 +206,7 @@ This project covers:
 - Wire the distributed-limiter readiness plan into a live Redis or Envoy global-rate-limit integration.
 - Capture Grafana and collector screenshots from synthetic traffic after local docker review.
 - Replace synthetic capacity inputs with measured backend profiles once a real model-serving adapter exists.
-- Extend workload-readiness and deployment-readiness replay with backend error-rate, queue-depth, resilience probes, and automated rollout evidence once a real serving adapter exists.
+- Replace synthetic resilience probes with measured backend error-rate, queue-depth, and recovery evidence once a real serving adapter exists.
 - Add policy-as-code examples, redaction controls, and negative authorization tests.
 - Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
 - Add SOC2/FedRAMP-inspired control mapping notes without claiming certification or production authorization.
