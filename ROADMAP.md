@@ -64,6 +64,7 @@ Status: partially implemented.
 - Keep the synthetic capacity plan artifact aggregate-only and tied to configured policy budgets.
 - Keep the workload-readiness replay aggregate-only and tied to allowed, policy-denied, rate-limited, and token-budget-limited paths.
 - Keep the deployment-readiness artifact aggregate-only and tied to capacity, workload, distributed-limiter, staged rollout, and rollback gates.
+- Keep the resilience-drill artifact aggregate-only and tied to latency spike, backend error burst, queue saturation, audit backpressure, mitigation, and rollback checks.
 - Add Grafana and collector screenshots using synthetic traffic.
 - Wire the distributed-limiter readiness artifact into a live Redis or Envoy integration after the rule and key-shape review stays green.
 - Add SLO burn-rate alert examples for auth failures, policy denials, rate limiting, and inference latency.
@@ -77,7 +78,7 @@ Status: planned.
 - Keep mock backend tests so the repo remains reviewable without GPU hardware.
 - Replace synthetic capacity profiles with measured backend profiles once a real adapter exists.
 - Add GPU/DCGM telemetry correlation when real backend integration exists.
-- Extend the current estimated input-token throughput and workload-readiness proof with queue depth, backend error rate, resilience probes, and real per-model latency when backend integration exists.
+- Replace the synthetic resilience drill with real queue depth, backend error rate, recovery time, and per-model latency evidence when backend integration exists.
 
 ## Milestone 7: Control Mapping
 

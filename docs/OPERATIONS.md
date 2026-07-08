@@ -16,6 +16,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Capacity review: model policy changes compare request and input-token limits against a synthetic capacity/cost plan before rollout.
 - Workload readiness: synthetic replay covers allowed, policy-denied, rate-limited, and token-budget-limited paths before policy changes are treated as locally reviewable.
 - Deployment readiness: local release reviews compose capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates before serving-path changes are treated as locally reviewable.
+- Resilience review: synthetic degradation drills cover latency spikes, backend error bursts, queue saturation, and audit backpressure before serving-path changes are treated as locally reviewable.
 
 ## Metrics
 
@@ -70,6 +71,14 @@ The report composes `artifacts/capacity-plan-evidence.json`, `artifacts/workload
 
 Treat a `hold` deployment readiness status as a blocker for local serving-path changes until the underlying capacity, workload, limiter, phase-shape, or rollback gate is understood.
 
+## Resilience Drill Artifact
+
+Run `python -m gateway.resilience_drill --output artifacts/resilience-drill-evidence.json` to regenerate the checked resilience-drill report.
+
+The report composes workload-readiness and deployment-readiness evidence with synthetic degradation probes. It records latency-spike, backend-error, queue-saturation, and audit-backpressure scenarios; per-probe detection signals; mitigation paths; rollback actions; and recovery gates. It is local resilience review evidence only and deliberately excludes request bodies, decoded text, identities, secrets, access reasons, and production logs.
+
+Treat a `hold` resilience status as a blocker for local serving-path changes until the affected probe, source evidence, mitigation path, or rollback action is understood.
+
 ## Local Dashboard
 
 `docker compose up --build` starts the gateway, OpenTelemetry Collector, Prometheus, and Grafana with the dashboard provisioned from `deploy/grafana/dashboards/security-gateway.json`.
@@ -93,6 +102,7 @@ Dashboard panels cover:
 - Audit log write errors appear in application logs.
 - OTLP collector POST failures persist after a collector restart.
 - Deployment-readiness gate reports `hold` before a model-policy or serving-path change.
+- Resilience-drill gate reports `hold` before a serving-path or backend-routing change.
 
 ## Incident Runbooks
 
@@ -161,6 +171,15 @@ Dashboard panels cover:
 4. Roll back if the regression follows a deploy and breaches the objective.
 5. Add a regression test or benchmark case before reintroducing the change.
 
+### Backend Degradation Drill
+
+1. Regenerate `artifacts/workload-readiness-evidence.json`.
+2. Regenerate `artifacts/deployment-readiness-evidence.json`.
+3. Regenerate `artifacts/resilience-drill-evidence.json`.
+4. Check whether the held probe is latency spike, backend error burst, queue saturation, or audit backpressure.
+5. Confirm the mitigation path and rollback action are defined before changing traffic fraction or backend route.
+6. Keep the prior route, limiter descriptors, and audit sink configuration available until the drill returns to `pass`.
+
 ## Deployment Checks
 
 - `/health` must return `{"status":"ok"}` before routing production traffic.
@@ -174,4 +193,4 @@ Dashboard panels cover:
 - Optional OTLP collector endpoint must point at a trusted collector and must only receive sanitized span attributes.
 - Model policy changes should review both `requests_per_minute` and `input_tokens_per_minute`, then regenerate the capacity plan and workload-readiness artifacts.
 - External limiter migrations should regenerate the distributed-limiter artifact and confirm every model has request-count and estimated-input-token coverage.
-- Serving-path or policy rollout reviews should regenerate the deployment-readiness artifact and confirm capacity, workload, limiter, phase-shape, capacity-utilization, and rollback gates remain `pass`.
+- Serving-path or policy rollout reviews should regenerate the deployment-readiness and resilience-drill artifacts and confirm capacity, workload, limiter, phase-shape, capacity-utilization, degradation-probe, and rollback gates remain `pass`.

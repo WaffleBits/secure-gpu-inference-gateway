@@ -1,0 +1,205 @@
+{
+  "data_scope": "synthetic aggregate resilience drill; excludes request bodies, decoded text, identities, secrets, access reasons, and production logs",
+  "generated_by": "gateway.resilience_drill",
+  "probes": [
+    {
+      "affected_model": "mission-summarizer",
+      "baseline_p95_latency_ms": 410.0,
+      "checks": {
+        "error_rate_within_limit": true,
+        "latency_within_multiplier": true,
+        "mitigation_path_defined": true,
+        "queue_depth_within_limit": true,
+        "recovery_within_limit": true
+      },
+      "detection_signal": "p95 latency gate moves above baseline while guardrail coverage remains complete",
+      "injected_condition": "synthetic backend p95 latency increase during shadow validation",
+      "latency_limit_ms": 615.0,
+      "mitigation_path": "hold the serving-path change and keep prior route active",
+      "name": "latency_spike_shadow_probe",
+      "observed_error_rate": 0.0,
+      "observed_p95_latency_ms": 488.0,
+      "observed_queue_depth": 17,
+      "recovery_seconds": 28.0,
+      "rollback_action": "restore prior model route and attach the workload-readiness artifact",
+      "scenario": "backend_latency_spike",
+      "status": "pass"
+    },
+    {
+      "affected_model": "threat-triage",
+      "baseline_p95_latency_ms": 530.0,
+      "checks": {
+        "error_rate_within_limit": true,
+        "latency_within_multiplier": true,
+        "mitigation_path_defined": true,
+        "queue_depth_within_limit": true,
+        "recovery_within_limit": true
+      },
+      "detection_signal": "error-rate gate trips before full rollout is allowed",
+      "injected_condition": "synthetic transient backend error burst during canary review",
+      "latency_limit_ms": 795.0,
+      "mitigation_path": "freeze canary expansion and compare against the last passing deployment evidence",
+      "name": "error_burst_canary_probe",
+      "observed_error_rate": 0.015,
+      "observed_p95_latency_ms": 545.0,
+      "observed_queue_depth": 12,
+      "recovery_seconds": 35.0,
+      "rollback_action": "disable candidate backend target and restore prior limiter descriptors",
+      "scenario": "backend_error_burst",
+      "status": "pass"
+    },
+    {
+      "affected_model": "mission-summarizer",
+      "baseline_p95_latency_ms": 410.0,
+      "checks": {
+        "error_rate_within_limit": true,
+        "latency_within_multiplier": true,
+        "mitigation_path_defined": true,
+        "queue_depth_within_limit": true,
+        "recovery_within_limit": true
+      },
+      "detection_signal": "queue depth approaches the drill limit before request and token budgets regress",
+      "injected_condition": "synthetic queue-depth pressure at staged rollout load",
+      "latency_limit_ms": 615.0,
+      "mitigation_path": "pause staged rollout and reduce traffic fraction",
+      "name": "queue_saturation_staged_probe",
+      "observed_error_rate": 0.005,
+      "observed_p95_latency_ms": 585.0,
+      "observed_queue_depth": 48,
+      "recovery_seconds": 42.0,
+      "rollback_action": "return traffic to the prior capacity reservation",
+      "scenario": "queue_saturation",
+      "status": "pass"
+    },
+    {
+      "affected_model": "benchmark-echo",
+      "baseline_p95_latency_ms": 95.0,
+      "checks": {
+        "error_rate_within_limit": true,
+        "latency_within_multiplier": true,
+        "mitigation_path_defined": true,
+        "queue_depth_within_limit": true,
+        "recovery_within_limit": true
+      },
+      "detection_signal": "audit durability warning appears before inference latency breaches the drill limit",
+      "injected_condition": "synthetic audit sink delay while health traffic remains allowed",
+      "latency_limit_ms": 142.5,
+      "mitigation_path": "hold policy changes until audit sink latency returns to baseline",
+      "name": "audit_backpressure_probe",
+      "observed_error_rate": 0.0,
+      "observed_p95_latency_ms": 125.0,
+      "observed_queue_depth": 8,
+      "recovery_seconds": 18.0,
+      "rollback_action": "restore prior audit sink configuration and keep sanitized trace evidence attached",
+      "scenario": "audit_sink_backpressure",
+      "status": "pass"
+    }
+  ],
+  "readiness_status": "pass",
+  "release_gates": [
+    {
+      "artifact": "artifacts/workload-readiness-evidence.json",
+      "name": "workload_readiness_passed",
+      "status": "pass"
+    },
+    {
+      "artifact": "artifacts/deployment-readiness-evidence.json",
+      "name": "deployment_readiness_passed",
+      "status": "pass"
+    },
+    {
+      "artifact": "artifacts/capacity-plan-evidence.json",
+      "name": "capacity_plan_passed",
+      "status": "pass"
+    },
+    {
+      "artifact": "artifacts/distributed-limiter-evidence.json",
+      "name": "distributed_limiter_evidence_passed",
+      "status": "pass"
+    },
+    {
+      "missing_scenarios": [],
+      "name": "resilience_scenario_coverage",
+      "observed_scenarios": [
+        "audit_sink_backpressure",
+        "backend_error_burst",
+        "backend_latency_spike",
+        "queue_saturation"
+      ],
+      "status": "pass"
+    },
+    {
+      "held_probes": [],
+      "name": "resilience_probe_thresholds",
+      "status": "pass"
+    },
+    {
+      "missing_mitigations": [],
+      "name": "mitigation_paths_defined",
+      "status": "pass"
+    },
+    {
+      "name": "public_safe_artifact",
+      "omitted_categories": [
+        "request payloads",
+        "model responses",
+        "identity fields",
+        "access justification text",
+        "auth material",
+        "production logs"
+      ],
+      "status": "pass"
+    }
+  ],
+  "rollout_recommendation": "ready_for_resilience_review",
+  "scenario_coverage": {
+    "missing_scenarios": [],
+    "observed_scenarios": [
+      "audit_sink_backpressure",
+      "backend_error_burst",
+      "backend_latency_spike",
+      "queue_saturation"
+    ]
+  },
+  "scenario_name": "synthetic_inference_gateway_resilience_drill",
+  "schema_version": 1,
+  "source_evidence": {
+    "capacity_plan": {
+      "artifact": "artifacts/capacity-plan-evidence.json",
+      "model_count": 3,
+      "status": "pass"
+    },
+    "deployment_readiness": {
+      "artifact": "artifacts/deployment-readiness-evidence.json",
+      "phase_count": 4,
+      "status": "pass"
+    },
+    "distributed_limiter": {
+      "artifact": "artifacts/distributed-limiter-evidence.json",
+      "rule_count": 6,
+      "status": "pass"
+    },
+    "workload_readiness": {
+      "artifact": "artifacts/workload-readiness-evidence.json",
+      "observed_outcomes": [
+        "allowed",
+        "policy_denied",
+        "rate_limited",
+        "token_budget_limited"
+      ],
+      "status": "pass"
+    }
+  },
+  "thresholds": {
+    "max_error_rate": 0.02,
+    "max_latency_multiplier": 1.5,
+    "max_queue_depth": 64,
+    "max_recovery_seconds": 60.0,
+    "required_scenarios": [
+      "backend_latency_spike",
+      "backend_error_burst",
+      "queue_saturation",
+      "audit_sink_backpressure"
+    ]
+  }
+}
