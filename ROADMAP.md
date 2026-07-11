@@ -72,13 +72,14 @@ Status: partially implemented.
 
 ## Milestone 6: Model-Serving Integration
 
-Status: planned.
+Status: in progress.
 
 - Add adapters for Triton-compatible, vLLM-compatible, or SGLang-compatible backends.
+- The first adapter is an optional, mock-by-default OpenAI-compatible completion path with timeout, schema, and generic backend-error handling.
 - Keep mock backend tests so the repo remains reviewable without GPU hardware.
-- Replace synthetic capacity profiles with measured backend profiles once a real adapter exists.
+- Replace synthetic capacity profiles with measured backend profiles after exercising a real serving endpoint.
 - Add GPU/DCGM telemetry correlation when real backend integration exists.
-- Replace the synthetic resilience drill with real queue depth, backend error rate, recovery time, and per-model latency evidence when backend integration exists.
+- Replace the synthetic resilience drill with real queue depth, backend error rate, recovery time, and per-model latency evidence after exercising a real serving endpoint.
 
 ## Milestone 7: Control Mapping
 
