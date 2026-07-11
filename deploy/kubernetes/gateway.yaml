@@ -13,6 +13,7 @@ data:
   OIDC_ISSUER: https://issuer.example.com
   OIDC_AUDIENCE: secure-gpu-inference-gateway
   ALLOW_DEMO_PRINCIPALS: "false"
+  INFERENCE_BACKEND_TIMEOUT_MS: "5000"
   PYTHONDONTWRITEBYTECODE: "1"
 ---
 apiVersion: apps/v1

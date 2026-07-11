@@ -8,6 +8,9 @@ services:
       TRACE_EXPORT_PATH: /var/log/gateway/traces.jsonl
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
       ALLOW_DEMO_PRINCIPALS: "true"
+      # Optional: set these for a local vLLM/SGLang-compatible backend.
+      # INFERENCE_BACKEND_COMPLETIONS_URL: http://model-backend:8000/v1
+      # INFERENCE_BACKEND_API_KEY: ${INFERENCE_BACKEND_API_KEY:-}
     volumes:
       - gateway-logs:/var/log/gateway
     depends_on:
