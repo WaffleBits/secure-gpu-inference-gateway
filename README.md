@@ -29,6 +29,7 @@ This is the flagship portfolio project for the platform-security-to-AI-infrastru
 - Synthetic capacity and cost-to-serve planning artifact tied to configured model policies.
 - Prometheus, OpenTelemetry Collector, and Grafana provisioning files for local observability review.
 - Mock GPU inference backend with latency metadata.
+- Optional OpenAI-compatible backend adapter for vLLM/SGLang-style `/v1/completions` endpoints, with bounded timeouts and validated response shapes.
 - Focused unit tests for policy and limiter behavior.
 - Threat model and architecture notes.
 - Kubernetes deployment example with health probes and scrape annotations.
@@ -145,6 +146,24 @@ python -m gateway.resilience_drill --output artifacts/resilience-drill-evidence.
 
 The checked resilience artifact composes workload and deployment evidence with synthetic backend degradation probes. It records latency-spike, error-burst, queue-saturation, and audit-backpressure checks, detection signals, mitigation paths, rollback actions, and recovery gates without request bodies, decoded text, identities, secrets, access reasons, or production logs.
 
+## Optional Model-Serving Adapter
+
+The mock backend is the default. To route an allowed request to a vLLM- or
+SGLang-style OpenAI-compatible completion endpoint, set
+`INFERENCE_BACKEND_COMPLETIONS_URL` to either the backend base URL, its `/v1`
+URL, or the full `/v1/completions` URL. The adapter sends a bounded non-streaming
+completion request, validates the returned text shape, applies a five-second
+default timeout, and returns a generic `502` with the trace ID when the backend
+is unavailable. Set `INFERENCE_BACKEND_API_KEY` through a secret when the
+backend requires authentication; the key, prompt, output, and endpoint errors
+are not written to audit or trace records.
+
+```powershell
+$env:INFERENCE_BACKEND_COMPLETIONS_URL = "http://localhost:8001/v1"
+$env:INFERENCE_BACKEND_TIMEOUT_MS = "5000"
+python -m uvicorn gateway.app:app --port 8000
+```
+
 Local dashboard stack:
 
 ```bash
@@ -193,6 +212,7 @@ This project covers:
 - Distributed-limiter readiness evidence that connects configured request/token budgets to Redis atomic-window and Envoy descriptor shapes before a live external limiter is introduced.
 - Deployment-readiness evidence that connects capacity planning, workload guardrail coverage, distributed limiter coverage, staged rollout phases, and rollback triggers before policy or serving-path changes are treated as locally reviewable.
 - Resilience-drill evidence that connects workload and deployment readiness to synthetic latency spike, backend error burst, queue saturation, audit backpressure, mitigation, and rollback checks.
+- An optional vLLM/SGLang-style backend adapter with schema validation, timeout handling, generic backend-error responses, and mock-by-default operation.
 - Synthetic workload-readiness replay that proves guardrail coverage and latency gates for allowed, policy-denied, rate-limited, and token-budget-limited paths without persisting sensitive request data.
 - Synthetic capacity and cost-to-serve projection that connects policy budgets to modeled request, token, latency, utilization, and cost assumptions.
 - Local Prometheus/Grafana review files for model-access, auth, denial, and latency telemetry.
@@ -205,8 +225,8 @@ This project covers:
 - Replace local HS256 review tokens with JWKS-backed OIDC key rotation.
 - Wire the distributed-limiter readiness plan into a live Redis or Envoy global-rate-limit integration.
 - Capture Grafana and collector screenshots from synthetic traffic after local docker review.
-- Replace synthetic capacity inputs with measured backend profiles once a real model-serving adapter exists.
-- Replace synthetic resilience probes with measured backend error-rate, queue-depth, and recovery evidence once a real serving adapter exists.
+- Replace synthetic capacity inputs with measured backend profiles after exercising a real model-serving endpoint.
+- Replace synthetic resilience probes with measured backend error-rate, queue-depth, and recovery evidence after exercising a real serving endpoint.
 - Add policy-as-code examples, redaction controls, and negative authorization tests.
 - Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
 - Add SOC2/FedRAMP-inspired control mapping notes without claiming certification or production authorization.
