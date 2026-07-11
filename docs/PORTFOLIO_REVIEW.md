@@ -19,6 +19,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - `gateway/capacity_plan.py`: synthetic capacity and cost-to-serve projection tied to model policies.
 - `gateway/deployment_readiness.py`: synthetic deployment-readiness review that composes capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates.
 - `gateway/resilience_drill.py`: synthetic resilience drill for latency spike, backend error burst, queue saturation, audit backpressure, mitigation, and rollback evidence.
+- `gateway/backend_adapter.py`: optional OpenAI-compatible completion adapter for vLLM/SGLang-style serving paths, with bounded timeout and response validation.
 - `gateway/mock_inference.py`: reviewable model-serving boundary without private models or GPU hardware.
 - `artifacts/workload-readiness-evidence.json`: checked readiness artifact for guardrail coverage, latency gates, and model pressure summaries.
 - `artifacts/capacity-plan-evidence.json`: checked aggregate capacity artifact for local review.
@@ -51,6 +52,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Exercising synthetic backend degradation paths with detection signals, mitigation paths, rollback actions, and recovery gates.
 - Providing Prometheus/Grafana review files that turn gateway metrics into operational panels.
 - Designing a mockable inference boundary that can later route to real model-serving backends.
+- Routing allowed requests through an explicitly configured vLLM/SGLang-style endpoint while preserving mock-by-default reviewability and sanitized audit/trace boundaries.
 - Showing Kubernetes deployment thinking without requiring cloud credentials.
 - Keeping the next-build path focused on platform security and AI infrastructure controls instead of generic dashboard work.
 - Keeping public portfolio code free of secrets, credentials, private data, and production logs.
@@ -68,8 +70,8 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Add mTLS notes for gateway-to-backend communication.
 - Wire the checked Redis/Envoy limiter plan into live distributed limiter controls.
 - Capture collector and Grafana screenshots from synthetic traffic.
-- Replace synthetic capacity profiles with measured backend profiles after model-serving integration exists.
-- Replace synthetic resilience probes with measured backend error-rate, queue-depth, and recovery evidence after model-serving integration exists.
+- Replace synthetic capacity profiles with measured backend profiles after exercising a real model-serving endpoint.
+- Replace synthetic resilience probes with measured backend error-rate, queue-depth, and recovery evidence after exercising a real serving endpoint.
 - Add policy-as-code and redaction examples with positive and negative test cases.
 - Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
 - Add SOC2/FedRAMP-inspired control mapping notes without implying certification or production authorization.

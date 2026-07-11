@@ -6,9 +6,9 @@ from fastapi import FastAPI, Header, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from gateway.audit import JsonlAuditSink
+from gateway.backend_adapter import BackendAdapterError, run_configured_inference
 from gateway.identity import AuthSettings, ResolvedPrincipal, resolve_principal
 from gateway.metrics import GatewayMetrics
-from gateway.mock_inference import run_mock_inference
 from gateway.models import AuditEvent
 from gateway.policy import evaluate_policy
 from gateway.rate_limit import FixedWindowRateLimiter, FixedWindowTokenBudgetLimiter
@@ -221,7 +221,44 @@ def infer(
             headers={"traceparent": format_traceparent(trace)},
         )
 
-    result = run_mock_inference(model_id, request.input)
+    try:
+        result = run_configured_inference(model_id, request.input)
+    except BackendAdapterError:
+        backend_error_reasons = ("inference backend unavailable",)
+        metrics.record_request(model_id, "backend_error", backend_error_reasons)
+        metrics.record_input_tokens(model_id, "backend_error", estimated_input_tokens)
+        audit_sink.write(
+            audit_event(
+                resolved,
+                trace,
+                model_id=model_id,
+                allowed=True,
+                reason=request.reason,
+                decision_reasons=backend_error_reasons,
+                estimated_input_tokens=estimated_input_tokens,
+                token_budget_limit=token_budget_limit,
+            )
+        )
+        export_trace_span(
+            trace,
+            model_id=model_id,
+            outcome="backend_error",
+            auth_method=resolved.auth_method,
+            decision_reasons=backend_error_reasons,
+            latency_ms=None,
+            estimated_input_tokens=estimated_input_tokens,
+            token_budget_limit=token_budget_limit,
+            started_at_unix_nano=started_at_unix_nano,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "reason": "inference backend unavailable",
+                "trace_id": trace.trace_id,
+            },
+            headers={"traceparent": format_traceparent(trace)},
+        )
+
     latency_ms = float(result["latency_ms"])
     metrics.record_request(model_id, "allowed")
     metrics.record_input_tokens(model_id, "allowed", estimated_input_tokens)
