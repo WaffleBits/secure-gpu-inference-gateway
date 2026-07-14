@@ -76,6 +76,7 @@ Status: in progress.
 
 - Add adapters for Triton-compatible, vLLM-compatible, or SGLang-compatible backends.
 - The first adapter is an optional, mock-by-default OpenAI-compatible completion path with timeout, schema, and generic backend-error handling.
+- Add a bounded aggregate backend probe for explicitly configured endpoints; keep request and response content outside the checked artifact.
 - Keep mock backend tests so the repo remains reviewable without GPU hardware.
 - Replace synthetic capacity profiles with measured backend profiles after exercising a real serving endpoint.
 - Add GPU/DCGM telemetry correlation when real backend integration exists.
