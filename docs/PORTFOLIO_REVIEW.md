@@ -20,12 +20,14 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - `gateway/deployment_readiness.py`: synthetic deployment-readiness review that composes capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates.
 - `gateway/resilience_drill.py`: synthetic resilience drill for latency spike, backend error burst, queue saturation, audit backpressure, mitigation, and rollback evidence.
 - `gateway/backend_adapter.py`: optional OpenAI-compatible completion adapter for vLLM/SGLang-style serving paths, with bounded timeout and response validation.
+- `gateway/backend_probe.py`: bounded aggregate probe for an explicitly configured OpenAI-compatible endpoint, with latency percentiles and reported token totals.
 - `gateway/mock_inference.py`: reviewable model-serving boundary without private models or GPU hardware.
 - `artifacts/workload-readiness-evidence.json`: checked readiness artifact for guardrail coverage, latency gates, and model pressure summaries.
 - `artifacts/capacity-plan-evidence.json`: checked aggregate capacity artifact for local review.
 - `artifacts/distributed-limiter-evidence.json`: checked Redis/Envoy limiter migration artifact with rule coverage and public-safe release gates.
 - `artifacts/deployment-readiness-evidence.json`: checked deployment-readiness artifact for capacity-aware release phase review and rollback triggers.
 - `artifacts/resilience-drill-evidence.json`: checked resilience artifact for synthetic backend degradation probes and recovery gates.
+- `artifacts/backend-probe-evidence.json`: checked aggregate endpoint probe evidence for success rate, latency percentiles, and reported token totals.
 - `artifacts/otlp-collector-payload.json`: checked collector-ready trace payload generated from sanitized span evidence.
 - `deploy/otel-collector/collector-config.yaml`: local collector intake for OTLP/HTTP trace review.
 - `deploy/grafana/dashboards/security-gateway.json`: dashboard queries for request outcomes, latency, auth, denial, and model policy review.
@@ -53,6 +55,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Providing Prometheus/Grafana review files that turn gateway metrics into operational panels.
 - Designing a mockable inference boundary that can later route to real model-serving backends.
 - Routing allowed requests through an explicitly configured vLLM/SGLang-style endpoint while preserving mock-by-default reviewability and sanitized audit/trace boundaries.
+- Measuring a bounded endpoint sample through the same adapter boundary while keeping request and response content outside the evidence artifact.
 - Showing Kubernetes deployment thinking without requiring cloud credentials.
 - Keeping the next-build path focused on platform security and AI infrastructure controls instead of generic dashboard work.
 - Keeping public portfolio code free of secrets, credentials, private data, and production logs.
@@ -72,6 +75,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Capture collector and Grafana screenshots from synthetic traffic.
 - Replace synthetic capacity profiles with measured backend profiles after exercising a real model-serving endpoint.
 - Replace synthetic resilience probes with measured backend error-rate, queue-depth, and recovery evidence after exercising a real serving endpoint.
+- Repeat the backend probe against a real review endpoint before replacing synthetic capacity and resilience assumptions with measured backend telemetry.
 - Add policy-as-code and redaction examples with positive and negative test cases.
 - Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
 - Add SOC2/FedRAMP-inspired control mapping notes without implying certification or production authorization.

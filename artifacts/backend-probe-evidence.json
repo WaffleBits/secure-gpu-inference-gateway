@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "backend_protocol": "openai-compatible-completions",
+  "model_id": "readiness-model",
+  "attempted_requests": 4,
+  "successful_requests": 4,
+  "failed_requests": 0,
+  "success_rate": 1.0,
+  "latency_ms": {
+    "p50": 0.697,
+    "p95": 1.272,
+    "p99": 1.272,
+    "max": 1.272
+  },
+  "total_tokens_reported": 28,
+  "evidence_scope": [
+    "protocol and response-shape validation",
+    "bounded sequential request probe",
+    "aggregate latency and success-rate measurements"
+  ],
+  "exclusions": [
+    "request bodies",
+    "decoded output",
+    "API keys",
+    "endpoint URLs",
+    "principal identities"
+  ]
+}
