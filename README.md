@@ -30,6 +30,7 @@ This is the flagship portfolio project for the platform-security-to-AI-infrastru
 - Prometheus, OpenTelemetry Collector, and Grafana provisioning files for local observability review.
 - Mock GPU inference backend with latency metadata.
 - Optional OpenAI-compatible backend adapter for vLLM/SGLang-style `/v1/completions` endpoints, with bounded timeouts and validated response shapes.
+- Aggregate backend-probe evidence for an explicitly configured OpenAI-compatible endpoint, including success rate, latency percentiles, and reported token totals without retaining request or response content.
 - Focused unit tests for policy and limiter behavior.
 - Threat model and architecture notes.
 - Kubernetes deployment example with health probes and scrape annotations.
@@ -62,6 +63,7 @@ Relevant areas:
 - Review `gateway/trace_context.py` for W3C trace context parsing and response propagation.
 - Review `gateway/workload_replay.py` and `artifacts/workload-readiness-evidence.json` for aggregate guardrail coverage and local readiness gates.
 - Review `gateway/capacity_plan.py` and `artifacts/capacity-plan-evidence.json` for aggregate synthetic capacity and cost-to-serve modeling.
+- Review `gateway/backend_probe.py` and `artifacts/backend-probe-evidence.json` for bounded endpoint validation and aggregate latency/success evidence.
 - Review `deploy/grafana/dashboards/security-gateway.json` for dashboard queries over the gateway metrics.
 - Review `docs/OPERATIONS.md` and `deploy/kubernetes/gateway.yaml` for SLO/runbook and deployment thinking.
 - Check `tests/` for behavior-focused coverage.
@@ -163,6 +165,12 @@ $env:INFERENCE_BACKEND_COMPLETIONS_URL = "http://localhost:8001/v1"
 $env:INFERENCE_BACKEND_TIMEOUT_MS = "5000"
 python -m uvicorn gateway.app:app --port 8000
 ```
+
+## Backend Probe Evidence
+
+Run `python -m gateway.backend_probe --endpoint http://localhost:8001/v1 --requests 4 --output artifacts/backend-probe-evidence.json` after configuring an OpenAI-compatible completion endpoint.
+
+The probe sends a bounded sequential sample through the adapter, validates the response shape, and records only aggregate success rate, latency percentiles, and reported token totals. Request bodies, decoded output, API keys, endpoint URLs, and principal identities are excluded from the checked artifact. A `hold` result means the endpoint was not ready for measured capacity or resilience claims.
 
 Local dashboard stack:
 
