@@ -17,6 +17,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Workload readiness: synthetic replay covers allowed, policy-denied, rate-limited, and token-budget-limited paths before policy changes are treated as locally reviewable.
 - Deployment readiness: local release reviews compose capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates before serving-path changes are treated as locally reviewable.
 - Resilience review: synthetic degradation drills cover latency spikes, backend error bursts, queue saturation, and audit backpressure before serving-path changes are treated as locally reviewable.
+- Backend probe review: a bounded endpoint sample records aggregate success, latency, and reported token totals before measured backend capacity or resilience claims are made.
 
 ## Metrics
 
@@ -78,6 +79,12 @@ Run `python -m gateway.resilience_drill --output artifacts/resilience-drill-evid
 The report composes workload-readiness and deployment-readiness evidence with synthetic degradation probes. It records latency-spike, backend-error, queue-saturation, and audit-backpressure scenarios; per-probe detection signals; mitigation paths; rollback actions; and recovery gates. It is local resilience review evidence only and deliberately excludes request bodies, decoded text, identities, secrets, access reasons, and production logs.
 
 Treat a `hold` resilience status as a blocker for local serving-path changes until the affected probe, source evidence, mitigation path, or rollback action is understood.
+
+## Backend Probe Artifact
+
+Run `python -m gateway.backend_probe --endpoint http://localhost:8001/v1 --requests 4 --output artifacts/backend-probe-evidence.json` after configuring an OpenAI-compatible completion endpoint. The probe uses the existing adapter, validates successful response shapes, and reports aggregate request count, success rate, latency percentiles, and reported token totals. It is intentionally sequential and bounded; the checked artifact excludes request bodies, decoded output, API keys, endpoint URLs, and principal identities.
+
+Treat a `hold` probe status as evidence that the endpoint is not ready for measured capacity or resilience conclusions. Keep synthetic capacity and resilience artifacts as the review baseline until a real endpoint has been exercised repeatedly.
 
 ## Local Dashboard
 
