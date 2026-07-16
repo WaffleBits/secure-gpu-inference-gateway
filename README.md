@@ -1,76 +1,29 @@
 # Secure GPU Inference Gateway
 
-Security-focused AI infrastructure demo for OIDC/JWT-authenticated model access, role-based authorization, per-model request and token-budget limits, distributed-limiter readiness evidence, deployment-readiness evidence, resilience-drill evidence, trace-aware audit logs, OTLP collector-ready trace export, synthetic workload-readiness replay, synthetic capacity/cost planning, and policy-driven inference routing.
+An inference gateway demo built around a mock backend. It shows the security control plane a real model-serving system needs: who can call which model, why the call is allowed, how abuse is throttled, and what evidence survives afterward.
 
-This repository uses a mock inference backend so the security and infrastructure logic can be reviewed without GPU hardware, model weights, or cloud credentials.
-
-## Why This Exists
-
-AI infrastructure teams need more than a model endpoint. They need controls around who can call which model, why the call is allowed, how abuse is throttled, and what evidence exists after the fact. This project models that control plane.
-
-This is the flagship portfolio project for the platform-security-to-AI-infrastructure lane. It is meant to demonstrate security software around model-serving systems: identity, authorization, policy decisions, audit evidence, rate limits, observability, deployment posture, and a credible roadmap toward redaction, policy-as-code, supply-chain checks, and compliance evidence automation.
+The backend is a mock. There is no GPU, no model weights, and no cloud account required. The point is the control plane, not the inference.
 
 ## Features
 
-- FastAPI inference gateway.
-- OIDC-style bearer JWT validation with issuer, audience, expiry, and role-claim checks.
-- Demo principals and role-based model policies for local review.
-- Reason-for-access enforcement for sensitive models.
-- Fixed-window request and estimated input-token limiting by principal and model.
-- Distributed-limiter readiness artifact that maps per-model request and token budgets to Redis/Envoy-style global controls.
-- Deployment-readiness artifact that composes capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates.
-- Resilience-drill artifact that checks synthetic latency spike, backend error burst, queue saturation, and audit backpressure probes against rollout gates.
-- Structured JSONL audit logging with authentication and trace context evidence.
-- W3C `traceparent` propagation for OpenTelemetry-compatible request correlation.
-- Prometheus-compatible `/metrics` endpoint for authentication, policy, limiter, token-throughput, and latency telemetry.
-- Opt-in sanitized trace JSONL export for local OpenTelemetry-shaped span evidence.
-- OTLP/HTTP collector payload generation and optional collector posting for sanitized traces.
-- Synthetic workload-readiness replay artifact for allowed, policy-denied, rate-limited, and token-budget-limited paths.
-- Synthetic capacity and cost-to-serve planning artifact tied to configured model policies.
-- Prometheus, OpenTelemetry Collector, and Grafana provisioning files for local observability review.
-- Mock GPU inference backend with latency metadata.
-- Optional OpenAI-compatible backend adapter for vLLM/SGLang-style `/v1/completions` endpoints, with bounded timeouts and validated response shapes.
-- Aggregate backend-probe evidence for an explicitly configured OpenAI-compatible endpoint, including success rate, latency percentiles, and reported token totals without retaining request or response content.
-- Focused unit tests for policy and limiter behavior.
-- Threat model and architecture notes.
-- Kubernetes deployment example with health probes and scrape annotations.
-- SLO, alert, and incident runbook notes.
+- JWT authentication with issuer, audience, expiry, and role checks.
+- Role-based model authorization with reason-for-access enforcement.
+- Fixed-window request limits per principal and model.
+- Token-budget limits based on estimated input tokens.
+- Structured JSONL audit logging with trace context.
+- Prometheus `/metrics` for auth, policy, limiter, and latency.
+- Sanitized trace export in OpenTelemetry span form.
+- OTLP/HTTP collector payload generation.
+- Mock GPU backend, with an optional OpenAI-compatible adapter.
+- Unit tests plus a threat model and architecture notes.
 
-## Engineering Scope
+## Architecture
 
-This repo implements controls around model access, explains why a request was allowed or denied, preserves audit evidence, measures service behavior, and keeps policy, rate limiting, API routing, metrics, and inference concerns separated.
+The service keeps concerns separate. `gateway/app.py` orchestrates each request. `gateway/identity.py` verifies bearer JWTs. `gateway/policy.py` decides role and reason-for-access. `gateway/rate_limit.py` and `gateway/token_budget.py` enforce request and token limits. `gateway/audit.py` writes evidence. `gateway/metrics.py` exposes Prometheus counters. `gateway/trace_exporter.py` and `gateway/otlp_export.py` produce sanitized spans and collector payloads. The mock backend lives in `gateway/mock_inference.py`.
 
-Relevant areas:
+See `ARCHITECTURE.md` and `THREAT_MODEL.md` for the full picture.
 
-- Security infrastructure: OIDC/JWT authentication boundaries, authorization policy, audit trails, rate limits, and threat modeling.
-- AI platform engineering: protected inference paths, model routing extension points, mockable backends, and operational metadata.
-- Infrastructure/SRE: Prometheus-style metrics, health probes, SLO notes, runbooks, and Kubernetes deployment shape.
-- Backend engineering: FastAPI service structure, focused tests, clear module boundaries, and production-control roadmap.
-
-## Reviewer Fast Path
-
-- Start with `gateway/app.py` for request orchestration.
-- Review `gateway/identity.py` for bearer JWT verification and demo-principal fallback controls.
-- Review `gateway/policy.py` for role and reason-for-access decisions.
-- Review `gateway/rate_limit.py` and `gateway/token_budget.py` for request-count and token-budget limiter behavior.
-- Review `gateway/distributed_limiter.py` and `artifacts/distributed-limiter-evidence.json` for Redis/Envoy migration readiness evidence.
-- Review `gateway/deployment_readiness.py` and `artifacts/deployment-readiness-evidence.json` for capacity-aware shadow, canary, staged rollout, and rollback readiness evidence.
-- Review `gateway/resilience_drill.py` and `artifacts/resilience-drill-evidence.json` for synthetic backend degradation and recovery drill evidence.
-- Review `gateway/metrics.py` and `/metrics` for Prometheus-compatible operational telemetry.
-- Review `gateway/audit.py` for structured evidence.
-- Review `gateway/trace_exporter.py` for sanitized trace span export without prompt, output, access-reason, or principal identifiers.
-- Review `gateway/otlp_export.py` and `artifacts/otlp-collector-payload.json` for OTLP/HTTP collector-ready trace evidence.
-- Review `gateway/trace_context.py` for W3C trace context parsing and response propagation.
-- Review `gateway/workload_replay.py` and `artifacts/workload-readiness-evidence.json` for aggregate guardrail coverage and local readiness gates.
-- Review `gateway/capacity_plan.py` and `artifacts/capacity-plan-evidence.json` for aggregate synthetic capacity and cost-to-serve modeling.
-- Review `gateway/backend_probe.py` and `artifacts/backend-probe-evidence.json` for bounded endpoint validation and aggregate latency/success evidence.
-- Review `deploy/grafana/dashboards/security-gateway.json` for dashboard queries over the gateway metrics.
-- Review `docs/OPERATIONS.md` and `deploy/kubernetes/gateway.yaml` for SLO/runbook and deployment thinking.
-- Check `tests/` for behavior-focused coverage.
-- Read `docs/PORTFOLIO_REVIEW.md` for the role-specific review guide.
-- Read `ROADMAP.md` for the next build path toward a secure AI / cloud governance platform.
-
-## Quick Start
+## Quick start
 
 ```bash
 python -m venv .venv
@@ -79,106 +32,12 @@ pip install -r requirements.txt
 uvicorn gateway.app:app --reload
 ```
 
-Health check:
+Health and metrics:
 
 ```bash
 curl http://localhost:8000/health
-```
-
-Metrics:
-
-```bash
 curl http://localhost:8000/metrics
 ```
-
-Sanitized trace evidence:
-
-```bash
-set TRACE_EXPORT_PATH=artifacts/local-traces.jsonl
-uvicorn gateway.app:app --reload
-```
-
-Requests still write the normal audit event, but trace export is intentionally narrower. It records service, route, model, outcome, auth method, estimated input-token count, configured token budget, latency, and trace identifiers; it does not record prompt text, model output, access reason, subject, or principal ID. A checked example is in `artifacts/sanitized-trace-evidence.jsonl`.
-
-OTLP collector payload evidence:
-
-```bash
-python -m gateway.otlp_export --input artifacts/sanitized-trace-evidence.jsonl --output artifacts/otlp-collector-payload.json
-```
-
-The checked OTLP artifact is built from the same sanitized span record and keeps the collector boundary reviewable without sending prompt text, generated output, access reason, subject, or principal identifiers. To send the generated payload to a local collector, add `--endpoint http://localhost:4318/v1/traces --send`.
-
-Capacity plan evidence:
-
-```bash
-python -m gateway.capacity_plan --output artifacts/capacity-plan-evidence.json
-```
-
-The checked capacity artifact is synthetic aggregate data. It compares configured request and input-token policy limits against modeled per-model request capacity, input-token capacity, decode-token capacity, p95 latency, utilization assumptions, and cost-to-serve estimates. It is meant for review of the planning logic, not as a claim about a production fleet.
-
-Workload-readiness evidence:
-
-```bash
-python -m gateway.workload_replay --output artifacts/workload-readiness-evidence.json
-```
-
-The checked workload artifact replays synthetic aggregate traffic through the same policy, request-limit, and token-budget logic used by the gateway. It records outcome coverage, latency gates, and per-model pressure summaries while omitting request bodies, decoded text, identities, secrets, access reasons, and production logs.
-
-Distributed limiter readiness evidence:
-
-```bash
-python -m gateway.distributed_limiter --output artifacts/distributed-limiter-evidence.json
-```
-
-The checked distributed-limiter artifact maps every configured model policy to request-count and estimated-input-token rules for Redis fixed-window and Envoy global-rate-limit style backends. It records atomic script shape, descriptor shape, rule coverage, sample allow/deny decisions, and release gates without request bodies, decoded text, subject identifiers, secrets, access reasons, or production logs.
-
-Deployment readiness evidence:
-
-```bash
-python -m gateway.deployment_readiness --output artifacts/deployment-readiness-evidence.json
-```
-
-The checked deployment artifact composes the capacity plan, workload-readiness replay, and distributed-limiter evidence into a release review. It records shadow, canary, staged rollout, and full rollout phases; capacity reservation math; rollback triggers; and release gates without request bodies, decoded text, identities, secrets, access reasons, or production logs.
-
-Resilience drill evidence:
-
-```bash
-python -m gateway.resilience_drill --output artifacts/resilience-drill-evidence.json
-```
-
-The checked resilience artifact composes workload and deployment evidence with synthetic backend degradation probes. It records latency-spike, error-burst, queue-saturation, and audit-backpressure checks, detection signals, mitigation paths, rollback actions, and recovery gates without request bodies, decoded text, identities, secrets, access reasons, or production logs.
-
-## Optional Model-Serving Adapter
-
-The mock backend is the default. To route an allowed request to a vLLM- or
-SGLang-style OpenAI-compatible completion endpoint, set
-`INFERENCE_BACKEND_COMPLETIONS_URL` to either the backend base URL, its `/v1`
-URL, or the full `/v1/completions` URL. The adapter sends a bounded non-streaming
-completion request, validates the returned text shape, applies a five-second
-default timeout, and returns a generic `502` with the trace ID when the backend
-is unavailable. Set `INFERENCE_BACKEND_API_KEY` through a secret when the
-backend requires authentication; the key, prompt, output, and endpoint errors
-are not written to audit or trace records.
-
-```powershell
-$env:INFERENCE_BACKEND_COMPLETIONS_URL = "http://localhost:8001/v1"
-$env:INFERENCE_BACKEND_TIMEOUT_MS = "5000"
-python -m uvicorn gateway.app:app --port 8000
-```
-
-## Backend Probe Evidence
-
-Run `python -m gateway.backend_probe --endpoint http://localhost:8001/v1 --requests 4 --output artifacts/backend-probe-evidence.json` after configuring an OpenAI-compatible completion endpoint.
-
-The probe sends a bounded sequential sample through the adapter, validates the response shape, and records only aggregate success rate, latency percentiles, and reported token totals. Request bodies, decoded output, API keys, endpoint URLs, and principal identities are excluded from the checked artifact. A `hold` result means the endpoint was not ready for measured capacity or resilience claims.
-
-Local dashboard stack:
-
-```bash
-docker compose up --build
-```
-
-Then open Prometheus at `http://localhost:9090` and Grafana at `http://localhost:3000`. The dashboard is provisioned from `deploy/grafana/dashboards/security-gateway.json`, and the collector receives gateway spans on `http://localhost:4318/v1/traces`.
 
 Inference request:
 
@@ -189,7 +48,7 @@ curl -X POST http://localhost:8000/v1/infer/mission-summarizer \
   -d "{\"input\":\"Summarize synthetic maintenance delays\", \"reason\":\"readiness review\"}"
 ```
 
-The local demo header is enabled by default for reviewer convenience. To exercise the JWT path, set:
+The demo header is enabled by default for convenience. To exercise the JWT path:
 
 ```bash
 set OIDC_ISSUER=https://issuer.example.com
@@ -198,7 +57,55 @@ set OIDC_JWT_HS256_SECRET=local-review-secret
 set ALLOW_DEMO_PRINCIPALS=false
 ```
 
-Then send an `Authorization: Bearer <token>` header with `sub`, `iss`, `aud`, `exp`, and a `roles` or `scope` claim matching the target model policy. The verifier uses HS256 for local testing; production OIDC deployments should use JWKS-backed asymmetric signing and key rotation.
+Then send `Authorization: Bearer <token>` with `sub`, `iss`, `aud`, `exp`, and a `roles` or `scope` claim matching the model policy. HS256 is for local testing. Production OIDC should use JWKS-backed signing and key rotation.
+
+Local dashboard stack:
+
+```bash
+docker compose up --build
+```
+
+Prometheus runs at `http://localhost:9090`, Grafana at `http://localhost:3000`. The dashboard is provisioned from `deploy/grafana/dashboards/security-gateway.json`, and the collector receives spans on `http://localhost:4318/v1/traces`.
+
+## Evidence artifacts
+
+The repo commits real output artifacts so a reviewer can inspect them without running anything:
+
+- [Sanitized trace evidence](artifacts/sanitized-trace-evidence.jsonl)
+- [OTLP collector payload](artifacts/otlp-collector-payload.json)
+- [Workload-readiness evidence](artifacts/workload-readiness-evidence.json)
+- [Capacity plan evidence](artifacts/capacity-plan-evidence.json)
+- [Distributed-limiter evidence](artifacts/distributed-limiter-evidence.json)
+- [Deployment-readiness evidence](artifacts/deployment-readiness-evidence.json)
+- [Resilience-drill evidence](artifacts/resilience-drill-evidence.json)
+- [Grafana dashboard](deploy/grafana/dashboards/security-gateway.json)
+
+The sanitized trace omits prompt text, model output, access reason, and principal ID. One span from `artifacts/sanitized-trace-evidence.jsonl`:
+
+```json
+{
+  "http.route": "/v1/infer/{model_id}",
+  "ai.gateway.model_id": "mission-summarizer",
+  "ai.gateway.outcome": "allowed",
+  "ai.gateway.auth_method": "demo-header",
+  "ai.gateway.estimated_input_tokens": 10,
+  "ai.gateway.token_budget_limit": 8000,
+  "ai.gateway.latency_ms": 7.25,
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+}
+```
+
+Regenerate any artifact from its module, for example `python -m gateway.workload_replay --output artifacts/workload-readiness-evidence.json`. The capacity, workload, limiter, deployment, and resilience artifacts are synthetic. They exercise the planning and gate logic, not a real fleet.
+
+## Optional model-serving adapter
+
+The mock backend is the default. To route an allowed request to a vLLM- or SGLang-style OpenAI-compatible endpoint, set `INFERENCE_BACKEND_COMPLETIONS_URL` to the backend base URL, its `/v1` URL, or the full `/v1/completions` URL. The adapter sends a bounded non-streaming request, validates the response shape, applies a five-second timeout, and returns a generic `502` with the trace ID on failure. Set `INFERENCE_BACKEND_API_KEY` through a secret when auth is required. The key, prompt, output, and endpoint errors stay out of audit and trace records.
+
+```powershell
+$env:INFERENCE_BACKEND_COMPLETIONS_URL = "http://localhost:8001/v1"
+$env:INFERENCE_BACKEND_TIMEOUT_MS = "5000"
+python -m uvicorn gateway.app:app --port 8000
+```
 
 ## Test
 
@@ -206,37 +113,10 @@ Then send an `Authorization: Bearer <token>` header with `sub`, `iss`, `aud`, `e
 python -m unittest discover -s tests
 ```
 
-## Engineering Notes
+## Next steps
 
-This project covers:
-
-- Access-control thinking around model-serving systems.
-- Audit and policy design.
-- Issuer-bound JWT validation, role claim mapping, and demo-auth disablement.
-- W3C trace context propagation for request correlation across a model-serving control plane.
-- Prometheus-compatible metrics for authentication outcomes, policy denials, request/token limiting, input-token throughput, and inference latency.
-- Sanitized trace export that proves request correlation without leaking prompts, outputs, reasons, or principal identifiers.
-- OTLP/HTTP collector export proof that converts sanitized span records into collector-ready trace payloads and can post them to a local collector.
-- Distributed-limiter readiness evidence that connects configured request/token budgets to Redis atomic-window and Envoy descriptor shapes before a live external limiter is introduced.
-- Deployment-readiness evidence that connects capacity planning, workload guardrail coverage, distributed limiter coverage, staged rollout phases, and rollback triggers before policy or serving-path changes are treated as locally reviewable.
-- Resilience-drill evidence that connects workload and deployment readiness to synthetic latency spike, backend error burst, queue saturation, audit backpressure, mitigation, and rollback checks.
-- An optional vLLM/SGLang-style backend adapter with schema validation, timeout handling, generic backend-error responses, and mock-by-default operation.
-- Synthetic workload-readiness replay that proves guardrail coverage and latency gates for allowed, policy-denied, rate-limited, and token-budget-limited paths without persisting sensitive request data.
-- Synthetic capacity and cost-to-serve projection that connects policy budgets to modeled request, token, latency, utilization, and cost assumptions.
-- Local Prometheus/Grafana review files for model-access, auth, denial, and latency telemetry.
-- Kubernetes-ready health probes, scrape annotations, and non-root runtime posture.
-- Backend service design with clear separation between API, policy, rate limiting, and inference.
-- A credible path toward production controls such as JWKS key rotation, mTLS, external policy engines, GPU telemetry, and model routing.
-
-## Gaps Worth Closing Next
-
-- Replace local HS256 review tokens with JWKS-backed OIDC key rotation.
-- Wire the distributed-limiter readiness plan into a live Redis or Envoy global-rate-limit integration.
-- Capture Grafana and collector screenshots from synthetic traffic after local docker review.
-- Replace synthetic capacity inputs with measured backend profiles after exercising a real model-serving endpoint.
-- Replace synthetic resilience probes with measured backend error-rate, queue-depth, and recovery evidence after exercising a real serving endpoint.
+- Replace local HS256 tokens with JWKS-backed OIDC key rotation.
+- Wire the limiter plan into a live Redis or Envoy integration.
+- Replace synthetic capacity and resilience inputs with measured backend telemetry.
 - Add policy-as-code examples, redaction controls, and negative authorization tests.
-- Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
-- Add SOC2/FedRAMP-inspired control mapping notes without claiming certification or production authorization.
-- Replace the `emptyDir` demo audit volume with durable log shipping or object storage retention.
-
+- Add CI supply-chain evidence: SBOM, dependency scanning, container scanning.
