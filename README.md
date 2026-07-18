@@ -14,7 +14,7 @@ The backend is a mock. There is no GPU, no model weights, and no cloud account r
 - Prometheus `/metrics` for auth, policy, limiter, and latency.
 - Sanitized trace export in OpenTelemetry span form.
 - OTLP/HTTP collector payload generation.
-- Mock GPU backend, with an optional OpenAI-compatible adapter.
+- Mock GPU backend, with an optional OpenAI-compatible adapter and bounded aggregate probe.
 - Unit tests plus a threat model and architecture notes.
 
 ## Architecture
@@ -78,6 +78,7 @@ The repo commits real output artifacts so a reviewer can inspect them without ru
 - [Distributed-limiter evidence](artifacts/distributed-limiter-evidence.json)
 - [Deployment-readiness evidence](artifacts/deployment-readiness-evidence.json)
 - [Resilience-drill evidence](artifacts/resilience-drill-evidence.json)
+- [Bounded backend-probe evidence](artifacts/backend-probe-evidence.json)
 - [Grafana dashboard](deploy/grafana/dashboards/security-gateway.json)
 
 The sanitized trace omits prompt text, model output, access reason, and principal ID. One span from `artifacts/sanitized-trace-evidence.jsonl`:
@@ -94,6 +95,12 @@ The sanitized trace omits prompt text, model output, access reason, and principa
   "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
 }
 ```
+
+The checked backend-probe artifact records a four-request local endpoint
+sample with response-shape validation, 100% success, and aggregate latency
+percentiles. It intentionally excludes request bodies, decoded output, API
+keys, endpoint URLs, and principal identities. This is endpoint-readiness
+evidence, not a claim about production capacity or a live GPU fleet.
 
 Regenerate any artifact from its module, for example `python -m gateway.workload_replay --output artifacts/workload-readiness-evidence.json`. The capacity, workload, limiter, deployment, and resilience artifacts are synthetic. They exercise the planning and gate logic, not a real fleet.
 
@@ -118,5 +125,7 @@ python -m unittest discover -s tests
 - Replace local HS256 tokens with JWKS-backed OIDC key rotation.
 - Wire the limiter plan into a live Redis or Envoy integration.
 - Replace synthetic capacity and resilience inputs with measured backend telemetry.
+- Run the bounded backend probe against a real authorized model-serving endpoint
+  and publish only aggregate latency, success, and token totals after review.
 - Add policy-as-code examples, redaction controls, and negative authorization tests.
 - Add CI supply-chain evidence: SBOM, dependency scanning, container scanning.
