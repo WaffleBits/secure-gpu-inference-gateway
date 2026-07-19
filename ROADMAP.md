@@ -43,10 +43,12 @@ Status: next.
 
 ## Milestone 4: Supply Chain And Deployment Evidence
 
-Status: planned.
+Status: baseline implemented; environment-specific signing remains planned.
 
-- Generate an SBOM in CI.
-- Add dependency and container image scanning.
+- Generate an SPDX SBOM for the review image in CI.
+- Audit pinned Python dependencies and fail the image job on unresolved high or
+  critical container vulnerabilities.
+- Keep Docker and Kubernetes runtime posture under executable tests.
 - Add Kubernetes admission-control notes for non-root containers, read-only filesystem posture, and resource limits.
 - Keep deployment-readiness evidence tied to capacity, workload, limiter, shadow, canary, staged rollout, and rollback checks before adding live deployment automation.
 - Add Terraform or IaC examples only after the runtime controls are credible.
