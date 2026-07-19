@@ -35,6 +35,11 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - `ROADMAP.md`: secure AI / cloud governance roadmap for policy-as-code, redaction, supply-chain evidence, telemetry, and control mapping.
 - `deploy/kubernetes/gateway.yaml`: health probes, non-root container posture, and scrape annotations.
 - `tests/`: behavior-focused coverage for security and limiter decisions.
+- `tests/test_deployment_posture.py`: executable checks for non-root container
+  execution, restricted Kubernetes runtime posture, health probes, resource
+  limits, and metrics scraping.
+- `.github/workflows/supply-chain.yml`: dependency audit, SPDX SBOM generation,
+  and high-severity container vulnerability gate.
 
 ## What This Demonstrates
 
@@ -59,6 +64,8 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Showing Kubernetes deployment thinking without requiring cloud credentials.
 - Keeping the next-build path focused on platform security and AI infrastructure controls instead of generic dashboard work.
 - Keeping public portfolio code free of secrets, credentials, private data, and production logs.
+- Treating deployment hardening and supply-chain evidence as tested controls,
+  rather than README-only intentions.
 
 ## Technical Scope
 
@@ -77,6 +84,7 @@ This project is intentionally designed as a public-safe AI security infrastructu
 - Replace synthetic resilience probes with measured backend error-rate, queue-depth, and recovery evidence after exercising a real serving endpoint.
 - Repeat the backend probe against a real review endpoint before replacing synthetic capacity and resilience assumptions with measured backend telemetry.
 - Add policy-as-code and redaction examples with positive and negative test cases.
-- Add CI supply-chain evidence such as SBOM generation, dependency scanning, and container scanning.
+- Replace the CI supply-chain baseline with organization-specific signing,
+  provenance, and admission policies when a real deployment environment exists.
 - Add SOC2/FedRAMP-inspired control mapping notes without implying certification or production authorization.
 - Add durable audit-log shipping and retention policy examples.

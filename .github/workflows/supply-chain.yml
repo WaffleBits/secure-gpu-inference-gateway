@@ -1,0 +1,76 @@
+name: Supply chain evidence
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  python-dependencies:
+    name: Python dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install pinned application dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Audit pinned dependencies
+        run: |
+          python -m pip install --disable-pip-version-check pip-audit==2.9.0
+          pip-audit -r requirements.txt --format json --output pip-audit.json
+
+      - name: Upload dependency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit
+          path: pip-audit.json
+
+  container-evidence:
+    name: Container SBOM and vulnerability gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build review image
+        run: docker build --pull --tag secure-gpu-inference-gateway:ci .
+
+      - name: Generate SPDX SBOM
+        run: >-
+          docker run --rm
+          --volume /var/run/docker.sock:/var/run/docker.sock
+          --volume "${{ github.workspace }}:/work"
+          anchore/syft:v1.18.1
+          secure-gpu-inference-gateway:ci
+          --output spdx-json=/work/sbom.spdx.json
+
+      - name: Scan image for high-severity vulnerabilities
+        run: >-
+          docker run --rm
+          --volume /var/run/docker.sock:/var/run/docker.sock
+          aquasec/trivy:0.59.1
+          image
+          --scanners vuln
+          --severity HIGH,CRITICAL
+          --ignore-unfixed
+          --exit-code 1
+          secure-gpu-inference-gateway:ci
+
+      - name: Upload container evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-supply-chain
+          path: sbom.spdx.json

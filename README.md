@@ -16,6 +16,10 @@ The backend is a mock. There is no GPU, no model weights, and no cloud account r
 - OTLP/HTTP collector payload generation.
 - Mock GPU backend, with an optional OpenAI-compatible adapter and bounded aggregate probe.
 - Unit tests plus a threat model and architecture notes.
+- CI supply-chain evidence: pinned dependency audit, SPDX image SBOM, and a
+  high-severity container vulnerability gate.
+- Deployment posture checks for non-root execution, dropped capabilities,
+  read-only root filesystem, health probes, resource limits, and metrics.
 
 ## Architecture
 
@@ -80,6 +84,11 @@ The repo commits real output artifacts so a reviewer can inspect them without ru
 - [Resilience-drill evidence](artifacts/resilience-drill-evidence.json)
 - [Bounded backend-probe evidence](artifacts/backend-probe-evidence.json)
 - [Grafana dashboard](deploy/grafana/dashboards/security-gateway.json)
+
+The CI workflow also publishes a dependency-audit report and SPDX SBOM for
+review. The container scan fails on unresolved high or critical vulnerabilities;
+the checked-in posture tests keep the Docker and Kubernetes hardening controls
+from silently drifting.
 
 The sanitized trace omits prompt text, model output, access reason, and principal ID. One span from `artifacts/sanitized-trace-evidence.jsonl`:
 
