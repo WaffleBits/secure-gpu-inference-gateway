@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "evidence_scope": [
+    "aggregate gateway Prometheus snapshot",
+    "request-outcome and estimated-token correlation",
+    "histogram upper-bound latency summaries"
+  ],
+  "gateway": {
+    "requests": {
+      "total": 4,
+      "by_outcome": {
+        "allowed": 3,
+        "policy_denied": 1
+      },
+      "allowed_rate": 0.75
+    },
+    "estimated_input_tokens": {
+      "allowed": 30,
+      "policy_denied": 4
+    },
+    "latency_ms": {
+      "mission-summarizer": {
+        "count": 3,
+        "mean_ms": 35.0,
+        "p95_upper_bound_ms": 50.0
+      }
+    }
+  },
+  "release_gates": [
+    {
+      "name": "gateway_request_metrics_present",
+      "status": "pass",
+      "observed": 4
+    },
+    {
+      "name": "gateway_latency_metrics_present",
+      "status": "pass",
+      "observed_models": 1
+    },
+    {
+      "name": "backend_probe_status",
+      "status": "pass",
+      "observed_success_rate": 1.0
+    }
+  ],
+  "exclusions": [
+    "request bodies",
+    "decoded output",
+    "API keys",
+    "endpoint URLs",
+    "principal identities"
+  ],
+  "backend_probe": {
+    "status": "pass",
+    "backend_protocol": "openai-compatible-completions",
+    "model_id": "readiness-model",
+    "attempted_requests": 4,
+    "successful_requests": 4,
+    "failed_requests": 0,
+    "success_rate": 1.0,
+    "total_tokens_reported": 28,
+    "latency_ms": {
+      "p50": 0.697,
+      "p95": 1.272,
+      "p99": 1.272,
+      "max": 1.272
+    },
+    "evidence_scope": [
+      "whitelisted aggregate backend-probe fields",
+      "response-shape validation and latency summary"
+    ]
+  }
+}
