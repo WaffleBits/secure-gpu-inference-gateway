@@ -15,6 +15,7 @@ The backend is a mock. There is no GPU, no model weights, and no cloud account r
 - Sanitized trace export in OpenTelemetry span form.
 - OTLP/HTTP collector payload generation.
 - Mock GPU backend, with an optional OpenAI-compatible adapter and bounded aggregate probe.
+- Aggregate telemetry snapshot that correlates gateway counters and latency histograms with probe evidence.
 - Unit tests plus a threat model and architecture notes.
 - CI supply-chain evidence: pinned dependency audit, SPDX image SBOM, and a
   high-severity container vulnerability gate.
@@ -83,6 +84,7 @@ The repo commits real output artifacts so a reviewer can inspect them without ru
 - [Deployment-readiness evidence](artifacts/deployment-readiness-evidence.json)
 - [Resilience-drill evidence](artifacts/resilience-drill-evidence.json)
 - [Bounded backend-probe evidence](artifacts/backend-probe-evidence.json)
+- [Telemetry-correlation evidence](artifacts/telemetry-correlation-evidence.json)
 - [Grafana dashboard](deploy/grafana/dashboards/security-gateway.json)
 
 The CI workflow also publishes a dependency-audit report and SPDX SBOM for
@@ -111,6 +113,12 @@ percentiles. It intentionally excludes request bodies, decoded output, API
 keys, endpoint URLs, and principal identities. This is endpoint-readiness
 evidence, not a claim about production capacity or a live GPU fleet.
 
+The telemetry-correlation artifact turns a safe `/metrics` scrape into an
+aggregate review snapshot: request outcomes, estimated input-token totals,
+histogram-based latency upper bounds, and the bounded probe result are shown
+together. The checked fixture is local review evidence; it does not claim live
+fleet capacity, GPU utilization, or customer traffic.
+
 Regenerate any artifact from its module, for example `python -m gateway.workload_replay --output artifacts/workload-readiness-evidence.json`. The capacity, workload, limiter, deployment, and resilience artifacts are synthetic. They exercise the planning and gate logic, not a real fleet.
 
 ## Optional model-serving adapter
@@ -138,3 +146,5 @@ python -m unittest discover -s tests
   and publish only aggregate latency, success, and token totals after review.
 - Add policy-as-code examples, redaction controls, and negative authorization tests.
 - Add CI supply-chain evidence: SBOM, dependency scanning, container scanning.
+- Capture a telemetry-correlation snapshot after each explicitly authorized
+  endpoint probe, then review it before replacing synthetic capacity inputs.

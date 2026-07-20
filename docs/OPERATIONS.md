@@ -18,6 +18,7 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Deployment readiness: local release reviews compose capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates before serving-path changes are treated as locally reviewable.
 - Resilience review: synthetic degradation drills cover latency spikes, backend error bursts, queue saturation, and audit backpressure before serving-path changes are treated as locally reviewable.
 - Backend probe review: a bounded endpoint sample records aggregate success, latency, and reported token totals before measured backend capacity or resilience claims are made.
+- Telemetry-correlation review: a safe metrics scrape joins gateway outcome/token counters and histogram latency upper bounds with the bounded probe result before measured backend claims are made.
 
 ## Metrics
 
@@ -85,6 +86,8 @@ Treat a `hold` resilience status as a blocker for local serving-path changes unt
 Run `python -m gateway.backend_probe --endpoint http://localhost:8001/v1 --requests 4 --output artifacts/backend-probe-evidence.json` after configuring an OpenAI-compatible completion endpoint. The probe uses the existing adapter, validates successful response shapes, and reports aggregate request count, success rate, latency percentiles, and reported token totals. It is intentionally sequential and bounded; the checked artifact excludes request bodies, decoded output, API keys, endpoint URLs, and principal identities.
 
 Treat a `hold` probe status as evidence that the endpoint is not ready for measured capacity or resilience conclusions. Keep synthetic capacity and resilience artifacts as the review baseline until a real endpoint has been exercised repeatedly.
+
+Run `python -m gateway.telemetry_snapshot --metrics-url http://localhost:8000/metrics --probe-report artifacts/backend-probe-evidence.json --output artifacts/telemetry-correlation-evidence.json` after the gateway has served the review traffic. The snapshot only keeps safe aggregate metric names and a whitelist of probe fields. Its latency values are histogram upper bounds rather than fabricated exact percentiles, and its release status is `hold` if the probe is held.
 
 ## Local Dashboard
 
