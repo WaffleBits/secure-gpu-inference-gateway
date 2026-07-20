@@ -1,0 +1,11 @@
+# Local review fixture mirroring the gateway's safe metric names.
+security_gateway_requests_total{model_id="mission-summarizer",outcome="allowed"} 3
+security_gateway_requests_total{model_id="mission-summarizer",outcome="policy_denied"} 1
+security_gateway_input_tokens_total{model_id="mission-summarizer",outcome="allowed"} 30
+security_gateway_input_tokens_total{model_id="mission-summarizer",outcome="policy_denied"} 4
+security_gateway_inference_latency_seconds_bucket{model_id="mission-summarizer",le="0.025"} 1
+security_gateway_inference_latency_seconds_bucket{model_id="mission-summarizer",le="0.05"} 3
+security_gateway_inference_latency_seconds_bucket{model_id="mission-summarizer",le="0.1"} 3
+security_gateway_inference_latency_seconds_bucket{model_id="mission-summarizer",le="+Inf"} 3
+security_gateway_inference_latency_seconds_count{model_id="mission-summarizer"} 3
+security_gateway_inference_latency_seconds_sum{model_id="mission-summarizer"} 0.105
