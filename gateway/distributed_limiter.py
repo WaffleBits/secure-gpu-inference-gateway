@@ -9,20 +9,10 @@ from typing import Any
 
 from gateway.models import ModelPolicy
 from gateway.registry import MODEL_POLICIES
+from gateway.rate_limit import REDIS_FIXED_WINDOW_LUA
 
 
 WINDOW_SECONDS = 60
-
-REDIS_FIXED_WINDOW_LUA = """local current = redis.call("INCRBY", KEYS[1], ARGV[1])
-if current == tonumber(ARGV[1]) then
-  redis.call("PEXPIRE", KEYS[1], ARGV[2])
-end
-if current > tonumber(ARGV[3]) then
-  return {0, current, tonumber(ARGV[3])}
-end
-return {1, current, tonumber(ARGV[3])}
-"""
-
 
 @dataclass(frozen=True)
 class LimitRule:

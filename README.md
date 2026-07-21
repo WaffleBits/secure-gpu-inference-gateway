@@ -10,6 +10,8 @@ The backend is a mock. There is no GPU, no model weights, and no cloud account r
 - Role-based model authorization with reason-for-access enforcement.
 - Fixed-window request limits per principal and model.
 - Token-budget limits based on estimated input tokens.
+- Optional Redis-backed request and token limits using an atomic Lua script;
+  memory-backed limits remain the default for local review.
 - Structured JSONL audit logging with trace context.
 - Prometheus `/metrics` for auth, policy, limiter, and latency.
 - Sanitized trace export in OpenTelemetry span form.
@@ -24,7 +26,7 @@ The backend is a mock. There is no GPU, no model weights, and no cloud account r
 
 ## Architecture
 
-The service keeps concerns separate. `gateway/app.py` orchestrates each request. `gateway/identity.py` verifies bearer JWTs. `gateway/policy.py` decides role and reason-for-access. `gateway/rate_limit.py` and `gateway/token_budget.py` enforce request and token limits. `gateway/audit.py` writes evidence. `gateway/metrics.py` exposes Prometheus counters. `gateway/trace_exporter.py` and `gateway/otlp_export.py` produce sanitized spans and collector payloads. The mock backend lives in `gateway/mock_inference.py`.
+The service keeps concerns separate. `gateway/app.py` orchestrates each request. `gateway/identity.py` verifies bearer JWTs. `gateway/policy.py` decides role and reason-for-access. `gateway/rate_limit.py` enforces memory-backed limits by default or Redis-backed atomic limits when explicitly enabled. `gateway/audit.py` writes evidence. `gateway/metrics.py` exposes Prometheus counters. `gateway/trace_exporter.py` and `gateway/otlp_export.py` produce sanitized spans and collector payloads. The mock backend lives in `gateway/mock_inference.py`.
 
 See `ARCHITECTURE.md` and `THREAT_MODEL.md` for the full picture.
 
@@ -71,6 +73,22 @@ docker compose up --build
 ```
 
 Prometheus runs at `http://localhost:9090`, Grafana at `http://localhost:3000`. The dashboard is provisioned from `deploy/grafana/dashboards/security-gateway.json`, and the collector receives spans on `http://localhost:4318/v1/traces`.
+
+Optional Redis limiter mode:
+
+```powershell
+pip install -r requirements-redis.txt
+$env:RATE_LIMIT_BACKEND = "redis"
+$env:REDIS_URL = "redis://localhost:6379/0"
+$env:REDIS_KEY_PREFIX = "sgig"
+uvicorn gateway.app:app
+```
+
+Redis mode hashes principal identifiers before constructing keys and evaluates
+one atomic fixed-window Lua script per request-count or input-token decision.
+The application fails closed at startup if the explicitly selected Redis
+backend is unavailable. The checked-in demo and tests remain dependency-free
+and use the memory backend unless `RATE_LIMIT_BACKEND=redis` is set.
 
 ## Evidence artifacts
 
@@ -140,7 +158,8 @@ python -m unittest discover -s tests
 ## Next steps
 
 - Replace local HS256 tokens with JWKS-backed OIDC key rotation.
-- Wire the limiter plan into a live Redis or Envoy integration.
+- Add Redis-backed limiter integration tests against a disposable service and
+  keep Envoy descriptor parity checked before production rollout.
 - Replace synthetic capacity and resilience inputs with measured backend telemetry.
 - Run the bounded backend probe against a real authorized model-serving endpoint
   and publish only aggregate latency, success, and token totals after review.

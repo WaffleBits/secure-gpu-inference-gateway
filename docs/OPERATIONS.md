@@ -13,6 +13,9 @@ This service is intentionally small, but it is shaped like an AI infrastructure 
 - Collector export: sanitized spans can be converted to OTLP/HTTP payloads and sent to a collector without widening the trace data boundary.
 - Budget visibility: request-count and estimated input-token budget decisions are visible in audit events and metrics.
 - Distributed limiter review: every model policy has request-count and estimated input-token rules mapped to a Redis/Envoy-style external limiter plan before replacing local fixed-window controls.
+- Redis runtime mode: set `RATE_LIMIT_BACKEND=redis` and `REDIS_URL` only when a
+  trusted Redis service is explicitly available; the process pings Redis before
+  serving traffic and uses the atomic script in `gateway/rate_limit.py`.
 - Capacity review: model policy changes compare request and input-token limits against a synthetic capacity/cost plan before rollout.
 - Workload readiness: synthetic replay covers allowed, policy-denied, rate-limited, and token-budget-limited paths before policy changes are treated as locally reviewable.
 - Deployment readiness: local release reviews compose capacity, workload, and limiter evidence into shadow, canary, staged rollout, and rollback gates before serving-path changes are treated as locally reviewable.
@@ -61,7 +64,13 @@ Treat a `hold` readiness status as a blocker for local policy-limit changes unti
 
 Run `python -m gateway.distributed_limiter --output artifacts/distributed-limiter-evidence.json` to regenerate the checked distributed-limiter report.
 
-The report maps each configured model policy to request-count and estimated-input-token rules, records the Redis fixed-window atomic script hash, shows Envoy global-rate-limit descriptor shape, and checks rule coverage before a live external limiter is introduced. It is migration evidence only; the running demo still uses in-memory controls so reviewers can exercise the project without Redis, Envoy, cloud credentials, or production traffic.
+The report maps each configured model policy to request-count and estimated-input-token rules, records the Redis fixed-window atomic script hash, shows Envoy global-rate-limit descriptor shape, and checks rule coverage before a live external limiter is introduced. It is migration evidence only; the running demo still uses in-memory controls by default so reviewers can exercise the project without Redis, Envoy, cloud credentials, or production traffic.
+
+To review the optional Redis path locally, install `requirements-redis.txt`, set
+`RATE_LIMIT_BACKEND=redis` and `REDIS_URL`, then start the gateway. Redis keys
+contain a truncated SHA-256 principal hash rather than the principal identifier.
+Do not enable this mode against an untrusted or shared Redis service without
+reviewing ACLs, TLS, key isolation, and failure behavior.
 
 Use the artifact before replacing the local limiter. Treat missing model coverage, missing token/request budget coverage, or a non-atomic script shape as a rollout blocker.
 

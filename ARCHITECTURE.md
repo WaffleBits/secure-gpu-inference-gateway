@@ -25,7 +25,8 @@ flowchart LR
 - `gateway/identity.py`: bearer JWT validation, role-claim mapping, and local demo-principal fallback.
 - `gateway/trace_context.py`: W3C `traceparent` parsing, child-span generation, and response propagation.
 - `gateway/policy.py`: role and reason-for-access decisions.
-- `gateway/rate_limit.py`: in-memory fixed-window request and token-budget limiters.
+- `gateway/rate_limit.py`: memory-backed request/token controls by default plus
+  optional Redis-backed atomic fixed-window controls.
 - `gateway/token_budget.py`: deterministic estimated input-token accounting.
 - `gateway/distributed_limiter.py`: Redis/Envoy migration readiness evidence for external request and token-budget controls.
 - `gateway/audit.py`: structured JSONL audit events with identity and trace evidence.
@@ -42,7 +43,7 @@ flowchart LR
 - Replace local HS256 review tokens with JWKS-backed OIDC key rotation.
 - Add mTLS between gateway and model backends.
 - Move policy definitions to OPA, Cedar, or a signed config bundle.
-- Wire the checked distributed-limiter readiness plan into Redis or Envoy global rate limits.
+- Wire the checked distributed-limiter readiness plan into Redis or Envoy global rate limits; the optional Redis path is now implemented, while Envoy remains a descriptor contract.
 - Keep sanitized trace JSONL and OTLP/HTTP collector export aligned while using Prometheus metrics for low-cardinality service health.
 - Capture GPU telemetry from DCGM and attach it to inference metrics.
 - Replace synthetic capacity assumptions with measured backend profiles after real model-serving integration exists.
