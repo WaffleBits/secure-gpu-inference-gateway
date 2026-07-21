@@ -1,6 +1,22 @@
 import unittest
 
-from gateway.rate_limit import FixedWindowRateLimiter, FixedWindowTokenBudgetLimiter
+from gateway.rate_limit import (
+    FixedWindowRateLimiter,
+    FixedWindowTokenBudgetLimiter,
+    REDIS_FIXED_WINDOW_LUA,
+    RedisFixedWindowRateLimiter,
+    RedisFixedWindowTokenBudgetLimiter,
+)
+
+
+class FakeRedis:
+    def __init__(self, decisions: list[list[int]]) -> None:
+        self.decisions = decisions
+        self.calls: list[tuple[str, int, tuple[str, ...]]] = []
+
+    def eval(self, script: str, numkeys: int, *keys_and_args: str) -> list[int]:
+        self.calls.append((script, numkeys, keys_and_args))
+        return self.decisions.pop(0)
 
 
 class RateLimitTest(unittest.TestCase):
@@ -31,6 +47,26 @@ class RateLimitTest(unittest.TestCase):
         limiter = FixedWindowTokenBudgetLimiter(window_seconds=60)
 
         self.assertFalse(limiter.allow("user-1", "model-1", cost=6, limit=5))
+
+    def test_redis_request_limiter_uses_atomic_script_and_hashed_principal(self) -> None:
+        client = FakeRedis([[1, 1, 2], [0, 3, 2]])
+        limiter = RedisFixedWindowRateLimiter(client, window_seconds=60)
+
+        self.assertTrue(limiter.allow("user-1", "model-1", limit=2))
+        self.assertFalse(limiter.allow("user-1", "model-1", limit=2))
+
+        script, numkeys, args = client.calls[0]
+        self.assertEqual(script, REDIS_FIXED_WINDOW_LUA)
+        self.assertEqual(numkeys, 1)
+        self.assertNotIn("user-1", args[0])
+        self.assertEqual(args[1:], ("1", "60000", "2"))
+
+    def test_redis_token_limiter_passes_token_cost(self) -> None:
+        client = FakeRedis([[1, 3, 5]])
+        limiter = RedisFixedWindowTokenBudgetLimiter(client, window_seconds=60)
+
+        self.assertTrue(limiter.allow("user-1", "model-1", cost=3, limit=5))
+        self.assertEqual(client.calls[0][2][1:], ("3", "60000", "5"))
 
 
 if __name__ == "__main__":

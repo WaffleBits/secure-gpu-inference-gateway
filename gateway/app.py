@@ -11,7 +11,7 @@ from gateway.identity import AuthSettings, ResolvedPrincipal, resolve_principal
 from gateway.metrics import GatewayMetrics
 from gateway.models import AuditEvent
 from gateway.policy import evaluate_policy
-from gateway.rate_limit import FixedWindowRateLimiter, FixedWindowTokenBudgetLimiter
+from gateway.rate_limit import build_limiters_from_env
 from gateway.registry import MODEL_POLICIES
 from gateway.token_budget import estimate_input_tokens
 from gateway.trace_context import RequestTrace, format_traceparent, resolve_trace_context
@@ -38,8 +38,7 @@ app = FastAPI(
     description="Public-safe AI inference security gateway demo.",
 )
 
-rate_limiter = FixedWindowRateLimiter()
-token_budget_limiter = FixedWindowTokenBudgetLimiter()
+rate_limiter, token_budget_limiter = build_limiters_from_env()
 audit_sink = JsonlAuditSink()
 metrics = GatewayMetrics()
 auth_settings = AuthSettings.from_env()
