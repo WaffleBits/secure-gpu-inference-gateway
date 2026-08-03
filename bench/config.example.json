@@ -42,14 +42,14 @@
     ]
   },
   "workloads": [
-    {"name": "short", "input_tokens": 32, "output_tokens": 16},
-    {"name": "medium", "input_tokens": 256, "output_tokens": 128},
-    {"name": "long", "input_tokens": 512, "output_tokens": 256}
+    {"name": "short", "input_tokens": 32, "output_tokens": 16, "min_requests": 20},
+    {"name": "medium", "input_tokens": 256, "output_tokens": 128, "min_requests": 20},
+    {"name": "long", "input_tokens": 512, "output_tokens": 192, "min_requests": 12}
   ],
   "concurrency": [1, 4, 8, 16, 32, 64],
   "repetitions": 3,
-  "min_requests_per_condition": 32,
-  "requests_per_concurrency": 2,
+  "min_requests_per_condition": 20,
+  "requests_per_concurrency": 1,
   "warmup_requests": 4,
   "seed": 20260803,
   "headline": {"workload": "medium", "concurrency": 8},

@@ -165,18 +165,22 @@ curl -N http://127.0.0.1:8000/v1/completions \
 Copy `bench/config.example.json` and edit it rather than modifying the example
 in place. The checked example defines:
 
-- token shapes `32/16`, `256/128`, and `512/256` for short, medium, and longer
+- token shapes `32/16`, `256/128`, and `512/192` for short, medium, and longer
   generation workloads;
 - concurrency `1, 4, 8, 16, 32, 64`;
 - three repetitions;
-- at least 32 requests per condition and at least two requests per concurrency
-  slot;
+- per-workload request floors of 20 for short and medium and 12 for long, with
+  at least one request per concurrency slot;
 - four warmup requests per condition;
 - a fixed seed and zero workload-length variance;
 - `medium` at concurrency `8` as the headline condition, declared before data
   collection.
 
-Reduce concurrency or token lengths when the selected model/hardware would OOM.
+Adjust `min_requests` per workload when a preliminary throughput run shows that
+one fixed floor would make the matrix impractical. Keep enough samples for the
+predeclared headline gate, and never resize a completed condition after looking
+at its gateway overhead. Reduce concurrency or token lengths when the selected
+model/hardware would OOM.
 Make the change in the config before running both paths; never change only the
 baseline or gateway condition.
 
@@ -334,6 +338,8 @@ Compose cannot install or validate host drivers.
   throughput because the response stream does not close until finalization ends.
 - Host CPU/GPU samples include other activity unless per-process PIDs are
   supplied and the benchmark host is otherwise isolated.
+- Resource sampling spans official-client startup, warmup, and measurement for
+  each condition; it is condition-level telemetry, not measurement-only usage.
 - Prometheus limiter percentiles are bucket bounds, not invented exact values.
 - The recorded local full-gateway run uses HS256 signature verification and
   loopback HTTP. It does not include TLS termination, a JWKS network/cache path,

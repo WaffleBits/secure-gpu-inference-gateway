@@ -85,6 +85,8 @@ def validate_config(config: dict[str, Any]) -> None:
             raise ValueError(f"{name} input_tokens must be positive")
         if int(workload.get("output_tokens", 0)) < 1:
             raise ValueError(f"{name} output_tokens must be positive")
+        if "min_requests" in workload and int(workload["min_requests"]) < 1:
+            raise ValueError(f"{name} min_requests must be positive")
     concurrency = [int(value) for value in config["concurrency"]]
     if not concurrency or any(value < 1 for value in concurrency):
         raise ValueError("concurrency values must be positive")
@@ -121,6 +123,7 @@ def validate_config(config: dict[str, Any]) -> None:
 def smoke_config(config: dict[str, Any]) -> dict[str, Any]:
     result = copy.deepcopy(config)
     result["workloads"] = [result["workloads"][0]]
+    result["workloads"][0]["min_requests"] = 2
     result["concurrency"] = [result["concurrency"][0]]
     result["repetitions"] = 1
     result["min_requests_per_condition"] = 2
@@ -143,8 +146,14 @@ def build_schedule(config: dict[str, Any]) -> list[dict[str, Any]]:
                 if (repetition + workload_index + concurrency_index) % 2:
                     path_order.reverse()
                 seed = int(config["seed"]) + repetition * 1000 + workload_index
+                minimum_requests = int(
+                    workload.get(
+                        "min_requests",
+                        config.get("min_requests_per_condition", 32),
+                    )
+                )
                 request_count = max(
-                    int(config.get("min_requests_per_condition", 32)),
+                    minimum_requests,
                     int(concurrency) * int(config.get("requests_per_concurrency", 2)),
                 )
                 for path_name in path_order:
