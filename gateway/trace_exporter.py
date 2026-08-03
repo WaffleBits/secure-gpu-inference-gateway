@@ -39,6 +39,7 @@ class TraceExporter(Protocol):
         started_at_unix_nano: int,
         ended_at_unix_nano: int,
         extra_attributes: Mapping[str, object] | None = None,
+        route: str = "/v1/infer/{model_id}",
     ) -> None:
         ...
 
@@ -59,6 +60,7 @@ class CompositeTraceExporter:
         started_at_unix_nano: int,
         ended_at_unix_nano: int,
         extra_attributes: Mapping[str, object] | None = None,
+        route: str = "/v1/infer/{model_id}",
     ) -> None:
         for exporter in self.exporters:
             exporter.write_span(
@@ -71,6 +73,7 @@ class CompositeTraceExporter:
                 started_at_unix_nano=started_at_unix_nano,
                 ended_at_unix_nano=ended_at_unix_nano,
                 extra_attributes=extra_attributes,
+                route=route,
             )
 
 
@@ -112,6 +115,7 @@ class JsonlTraceExporter:
         started_at_unix_nano: int,
         ended_at_unix_nano: int,
         extra_attributes: Mapping[str, object] | None = None,
+        route: str = "/v1/infer/{model_id}",
     ) -> None:
         record = build_span_record(
             trace,
@@ -124,6 +128,7 @@ class JsonlTraceExporter:
             started_at_unix_nano=started_at_unix_nano,
             ended_at_unix_nano=ended_at_unix_nano,
             extra_attributes=extra_attributes,
+            route=route,
         )
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("a", encoding="utf-8") as handle:
@@ -155,6 +160,7 @@ class OtlpHttpTraceExporter:
         started_at_unix_nano: int,
         ended_at_unix_nano: int,
         extra_attributes: Mapping[str, object] | None = None,
+        route: str = "/v1/infer/{model_id}",
     ) -> None:
         record = build_span_record(
             trace,
@@ -167,6 +173,7 @@ class OtlpHttpTraceExporter:
             started_at_unix_nano=started_at_unix_nano,
             ended_at_unix_nano=ended_at_unix_nano,
             extra_attributes=extra_attributes,
+            route=route,
         )
         payload = build_otlp_traces_payload((record,))
         try:
@@ -222,9 +229,10 @@ def build_span_record(
     started_at_unix_nano: int,
     ended_at_unix_nano: int,
     extra_attributes: Mapping[str, object] | None = None,
+    route: str = "/v1/infer/{model_id}",
 ) -> dict[str, object]:
     attributes: dict[str, object] = {
-        "http.route": "/v1/infer/{model_id}",
+        "http.route": route,
         "ai.gateway.auth_method": auth_method,
         "ai.gateway.decision_count": len(decision_reasons),
         "ai.gateway.model_id": model_id,
@@ -249,7 +257,7 @@ def build_span_record(
             "attributes": sanitize_attributes(attributes),
             "end_time_unix_nano": ended_at_unix_nano,
             "kind": "SERVER",
-            "name": "POST /v1/infer/{model_id}",
+            "name": f"POST {route}",
             "parent_span_id": trace.parent_span_id,
             "span_id": trace.span_id,
             "start_time_unix_nano": started_at_unix_nano,

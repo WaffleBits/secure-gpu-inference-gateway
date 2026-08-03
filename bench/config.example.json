@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "run_name": "vllm-gateway-overhead",
+  "vllm_command": ["vllm", "bench", "serve"],
+  "paths": {
+    "direct": {
+      "base_url": "http://127.0.0.1:8001",
+      "headers": {},
+      "api_key_env": "VLLM_API_KEY"
+    },
+    "gateway": {
+      "base_url": "http://127.0.0.1:8000",
+      "headers": {
+        "X-Principal-Id": "analyst-1"
+      },
+      "api_key_env": "GATEWAY_BEARER_TOKEN"
+    }
+  },
+  "gateway_metrics_url": "http://127.0.0.1:8000/metrics",
+  "gateway_configuration": {
+    "auth_mode": "demo-header",
+    "workers": 1,
+    "rate_limit_backend": "redis",
+    "audit_enabled": true,
+    "trace_export_enabled": true
+  },
+  "model": {
+    "id": "Qwen/Qwen2.5-3B-Instruct",
+    "served_name": "benchmark-echo",
+    "revision": null,
+    "dtype": "auto",
+    "quantization": null,
+    "vllm_environment": {},
+    "vllm_server_args": [
+      "--served-model-name",
+      "benchmark-echo",
+      "--max-model-len",
+      "4096",
+      "--gpu-memory-utilization",
+      "0.90",
+      "--no-enable-prefix-caching"
+    ]
+  },
+  "workloads": [
+    {"name": "short", "input_tokens": 32, "output_tokens": 16},
+    {"name": "medium", "input_tokens": 256, "output_tokens": 128},
+    {"name": "long", "input_tokens": 512, "output_tokens": 256}
+  ],
+  "concurrency": [1, 4, 8, 16, 32, 64],
+  "repetitions": 3,
+  "min_requests_per_condition": 32,
+  "requests_per_concurrency": 2,
+  "warmup_requests": 4,
+  "seed": 20260803,
+  "headline": {"workload": "medium", "concurrency": 8},
+  "sample_interval_seconds": 0.5,
+  "condition_timeout_seconds": 7200,
+  "continue_on_error": false,
+  "monitored_pids": {},
+  "python_environments": {},
+  "git_command": ["git"],
+  "nvidia_smi_command": ["nvidia-smi"],
+  "redis_url_env": "REDIS_URL"
+}

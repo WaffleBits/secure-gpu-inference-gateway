@@ -9,6 +9,16 @@ from gateway.models import ModelPolicy
 
 
 DEFAULT_LATENCY_BUCKETS = (0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0)
+DEFAULT_LIMITER_LATENCY_BUCKETS = (
+    0.00025,
+    0.0005,
+    0.001,
+    0.0025,
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+)
 
 
 @dataclass(frozen=True)
@@ -19,8 +29,13 @@ class MetricSample:
 
 
 class GatewayMetrics:
-    def __init__(self, latency_buckets: tuple[float, ...] = DEFAULT_LATENCY_BUCKETS) -> None:
+    def __init__(
+        self,
+        latency_buckets: tuple[float, ...] = DEFAULT_LATENCY_BUCKETS,
+        limiter_latency_buckets: tuple[float, ...] = DEFAULT_LIMITER_LATENCY_BUCKETS,
+    ) -> None:
         self.latency_buckets = tuple(sorted(latency_buckets))
+        self.limiter_latency_buckets = tuple(sorted(limiter_latency_buckets))
         self._requests: Counter[tuple[str, str]] = Counter()
         self._denials: Counter[tuple[str, str]] = Counter()
         self._auth_events: Counter[tuple[str, str]] = Counter()
@@ -28,6 +43,9 @@ class GatewayMetrics:
         self._latency_buckets: Counter[tuple[str, float]] = Counter()
         self._latency_count: Counter[str] = Counter()
         self._latency_sum: Counter[str] = Counter()
+        self._limiter_latency_buckets: Counter[tuple[str, str, float]] = Counter()
+        self._limiter_latency_count: Counter[tuple[str, str]] = Counter()
+        self._limiter_latency_sum: Counter[tuple[str, str]] = Counter()
         self._lock = Lock()
 
     def record_request(
@@ -59,6 +77,20 @@ class GatewayMetrics:
                 if latency_seconds <= bucket:
                     self._latency_buckets[(model_id, bucket)] += 1
 
+    def observe_limiter_latency(
+        self,
+        limiter: str,
+        backend: str,
+        latency_seconds: float,
+    ) -> None:
+        with self._lock:
+            key = (limiter, backend)
+            self._limiter_latency_count[key] += 1
+            self._limiter_latency_sum[key] += latency_seconds
+            for bucket in self.limiter_latency_buckets:
+                if latency_seconds <= bucket:
+                    self._limiter_latency_buckets[(limiter, backend, bucket)] += 1
+
     def render_prometheus(self, model_policies: dict[str, ModelPolicy]) -> str:
         with self._lock:
             samples = [
@@ -68,6 +100,7 @@ class GatewayMetrics:
                 *self._auth_samples(),
                 *self._input_token_samples(),
                 *self._latency_samples(),
+                *self._limiter_latency_samples(),
             ]
 
         sections = [
@@ -106,12 +139,19 @@ class GatewayMetrics:
                 for sample in samples
                 if sample.name == "security_gateway_input_tokens_total"
             ),
-            "# HELP security_gateway_inference_latency_seconds Mock inference latency histogram.",
+            "# HELP security_gateway_inference_latency_seconds Successful inference latency histogram.",
             "# TYPE security_gateway_inference_latency_seconds histogram",
             *format_samples(
                 sample
                 for sample in samples
                 if sample.name.startswith("security_gateway_inference_latency_seconds")
+            ),
+            "# HELP security_gateway_limiter_latency_seconds Limiter decision latency by control and backend.",
+            "# TYPE security_gateway_limiter_latency_seconds histogram",
+            *format_samples(
+                sample
+                for sample in samples
+                if sample.name.startswith("security_gateway_limiter_latency_seconds")
             ),
         ]
         return "\n".join(sections) + "\n"
@@ -204,6 +244,41 @@ class GatewayMetrics:
                     "security_gateway_inference_latency_seconds_sum",
                     {"model_id": model_id},
                     self._latency_sum[model_id],
+                )
+            )
+        return samples
+
+    def _limiter_latency_samples(self) -> list[MetricSample]:
+        samples: list[MetricSample] = []
+        for limiter, backend in sorted(self._limiter_latency_count):
+            labels = {"backend": backend, "limiter": limiter}
+            for bucket in self.limiter_latency_buckets:
+                samples.append(
+                    MetricSample(
+                        "security_gateway_limiter_latency_seconds_bucket",
+                        {**labels, "le": format_bucket(bucket)},
+                        self._limiter_latency_buckets[(limiter, backend, bucket)],
+                    )
+                )
+            samples.append(
+                MetricSample(
+                    "security_gateway_limiter_latency_seconds_bucket",
+                    {**labels, "le": "+Inf"},
+                    self._limiter_latency_count[(limiter, backend)],
+                )
+            )
+            samples.append(
+                MetricSample(
+                    "security_gateway_limiter_latency_seconds_count",
+                    labels,
+                    self._limiter_latency_count[(limiter, backend)],
+                )
+            )
+            samples.append(
+                MetricSample(
+                    "security_gateway_limiter_latency_seconds_sum",
+                    labels,
+                    self._limiter_latency_sum[(limiter, backend)],
                 )
             )
         return samples

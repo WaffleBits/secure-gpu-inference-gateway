@@ -10,6 +10,9 @@ flowchart LR
     API --> TokenBudget["Token Budget Limiter"]
     API --> DistLimit["Distributed Limiter Readiness"]
     API --> Model["Mock Inference Backend"]
+    API --> Proxy["OpenAI-compatible Streaming Proxy"]
+    Proxy --> Vllm["vLLM"]
+    Vllm --> GPU["GPU / Model"]
     API --> Audit["JSONL Audit Sink"]
     API --> TraceExport["Sanitized Trace Export"]
     TraceExport --> Otlp["OTLP Collector Payload"]
@@ -35,6 +38,14 @@ flowchart LR
 - `gateway/workload_replay.py`: synthetic aggregate workload replay for guardrail coverage and local readiness gates.
 - `gateway/capacity_plan.py`: synthetic capacity and cost-to-serve planning from model policy and benchmark assumptions.
 - `gateway/mock_inference.py`: synthetic model response with latency metadata.
+- `gateway/backend_adapter.py`: bounded adapter plus a process-wide pooled
+  streaming response path to a configured OpenAI-compatible backend.
+- `gateway/app.py`: preserves the original `/v1/infer/{model_id}` contract and
+  exposes `/v1/completions`, which applies the same full control path before
+  proxying vLLM SSE or JSON responses.
+- `bench/`: official-vLLM load orchestration, environment/resource capture,
+  raw sample normalization, fairness checks, analysis, plots, and Redis replica
+  correctness tooling.
 - `gateway/registry.py`: demo principals and model policies.
 - `deploy/prometheus`, `deploy/otel-collector`, and `deploy/grafana`: local metrics scrape, trace collection, and dashboard provisioning.
 

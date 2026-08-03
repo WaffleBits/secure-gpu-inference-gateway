@@ -1,0 +1,23 @@
+{
+  "allowed": 10,
+  "caller_isolation_status": 200,
+  "captured_at": "2026-08-03T20:11:07.162180Z",
+  "checks": {
+    "all_excess_limited": true,
+    "atomic_limit": true,
+    "caller_isolation": true,
+    "no_unexpected_status": true,
+    "window_expiration": true
+  },
+  "duration_seconds": 3.478588,
+  "expiration_wait_seconds": 3.0,
+  "gateway_replicas": 2,
+  "limited": 20,
+  "post_expiration_status": 200,
+  "request_limit": 10,
+  "schema_version": 1,
+  "status": "pass",
+  "total_requests": 30,
+  "unexpected_statuses": [],
+  "window_seconds": 2.0
+}

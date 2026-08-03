@@ -32,7 +32,28 @@ The `/metrics` endpoint exposes Prometheus-compatible text output without requir
 - `security_gateway_requests_total`: inference requests by `model_id` and `outcome`.
 - `security_gateway_denials_total`: denied requests by `model_id` and policy or limiter reason.
 - `security_gateway_input_tokens_total`: estimated input tokens by `model_id` and `outcome`.
-- `security_gateway_inference_latency_seconds`: histogram, count, and sum for successful mock inference calls.
+- `security_gateway_inference_latency_seconds`: histogram, count, and sum for successful inference calls.
+- `security_gateway_limiter_latency_seconds`: histogram, count, and sum for
+  request-count and input-token decisions, labeled by memory or Redis backend.
+
+For the streaming `/v1/completions` route, inference latency is measured from
+gateway request admission through completion of the proxied response stream.
+The response also includes a standard `Server-Timing` header for admission,
+request-limit, token-budget, and upstream-response-header timing. Benchmark
+analysis uses Prometheus counter deltas for Redis limiter latency because the
+official vLLM load client intentionally owns request timing.
+
+## Real vLLM Benchmark Operations
+
+Follow `bench/README.md` to run paired direct and full-gateway conditions. Keep
+the vLLM model, revision, dtype/quantization, engine arguments, seed, token
+shapes, request counts, concurrency, and warmup count identical. The runner
+alternates path order and aborts on endpoint or condition failure by default.
+
+Do not publish `report.md` as hardware evidence unless its environment metadata
+is complete, all workload-equivalence checks pass, failures are visible, and
+the predeclared headline gates pass. A smoke run validates plumbing but cannot
+produce a portfolio headline.
 
 ## Trace Export
 
