@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bench.analyze import analyze_run
+from bench.analyze import analyze_run, build_headline, combine_limiter_latency
 
 
 class BenchmarkAnalysisTest(unittest.TestCase):
@@ -107,8 +107,17 @@ class BenchmarkAnalysisTest(unittest.TestCase):
             self.assertEqual(
                 summary["comparisons"][0]["gateway_overhead_ms"]["p50"], 3.0
             )
+            self.assertEqual(
+                summary["comparisons"][0]["paired_runs"][0][
+                    "p50_latency_difference_ms"
+                ],
+                3.0,
+            )
             self.assertTrue(summary["comparisons"][0]["workload_equivalent"])
             self.assertEqual(summary["headline"]["status"], "supported")
+            self.assertEqual(
+                summary["headline"]["latency_claim"]["status"], "supported"
+            )
             self.assertTrue((run_dir / "report.md").exists())
             self.assertTrue((run_dir / "summary.json").exists())
             self.assertTrue(
@@ -116,6 +125,89 @@ class BenchmarkAnalysisTest(unittest.TestCase):
             )
             report = (run_dir / "report.md").read_text(encoding="utf-8")
             self.assertIn("added 3.00 ms p50", report)
+            self.assertIn("Paired repetitions", report)
+
+    def test_negative_paired_latency_differences_hold_causal_latency_claim(
+        self,
+    ) -> None:
+        paired_runs = [
+            {
+                "repetition": repetition,
+                "p50_latency_difference_ms": difference,
+                "throughput_retained_percent": retained,
+            }
+            for repetition, difference, retained in (
+                (0, -10.0, 101.0),
+                (1, -4.0, 103.0),
+                (2, -2.0, 99.0),
+            )
+        ]
+        comparison = {
+            "workload": "medium",
+            "concurrency": 8,
+            "workload_equivalent": True,
+            "direct": {
+                "repetitions": 3,
+                "completed_requests": 60,
+                "failed_requests": 0,
+            },
+            "gateway": {
+                "repetitions": 3,
+                "completed_requests": 60,
+                "failed_requests": 0,
+            },
+            "gateway_overhead_ms": {"p50": -4.0},
+            "throughput_retained_percent": 101.0,
+            "paired_runs": paired_runs,
+            "paired_run_variation": {
+                "p50_latency_difference_ms": {"min": -10.0, "max": -2.0},
+                "throughput_retained_percent": {"min": 99.0, "max": 103.0},
+            },
+        }
+
+        headline = build_headline(
+            [comparison], {"headline": {"workload": "medium", "concurrency": 8}}
+        )
+
+        self.assertEqual(headline["status"], "supported")
+        self.assertEqual(headline["latency_claim"]["status"], "held")
+        self.assertIn(
+            "no positive gateway-added latency or speedup claim", headline["text"]
+        )
+
+    def test_limiter_summary_does_not_understate_overflowed_percentiles(self) -> None:
+        combined = combine_limiter_latency(
+            [
+                {
+                    "gateway_limiter_latency": {
+                        "requests": {
+                            "backend": "redis",
+                            "count": 10,
+                            "mean_ms": 10.0,
+                            "p50_upper_bound_ms": 50.0,
+                            "p95_upper_bound_ms": None,
+                            "p99_upper_bound_ms": None,
+                        }
+                    }
+                },
+                {
+                    "gateway_limiter_latency": {
+                        "requests": {
+                            "backend": "redis",
+                            "count": 10,
+                            "mean_ms": 5.0,
+                            "p50_upper_bound_ms": 5.0,
+                            "p95_upper_bound_ms": 25.0,
+                            "p99_upper_bound_ms": 50.0,
+                        }
+                    }
+                },
+            ]
+        )
+
+        self.assertEqual(combined["requests"]["p50_upper_bound_ms"], 50.0)
+        self.assertIsNone(combined["requests"]["p95_upper_bound_ms"])
+        self.assertIsNone(combined["requests"]["p99_upper_bound_ms"])
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:

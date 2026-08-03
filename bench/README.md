@@ -264,8 +264,9 @@ repetition. A mismatch holds the predeclared headline.
 
 ## Statistical interpretation
 
-The report pools request distributions across repetitions and also reports the
-population standard deviation of per-run p50, p95, and throughput. Throughput is
+The report pools request distributions across repetitions, reports the
+population standard deviation of per-run p50, p95, and throughput, and shows a
+separate direct/gateway comparison for every paired repetition. Throughput is
 computed from total completions or tokens divided by total official client
 duration. Percentiles use linear interpolation over successful request samples.
 
@@ -275,10 +276,17 @@ Gateway overhead is:
 gateway-path percentile - direct-vLLM percentile
 ```
 
-This is a difference between matched condition distributions, not a fabricated
-per-request subtraction across two sequential GPU runs. The headline is emitted
-only when the predeclared condition has at least two repetitions, at least 30
-successful samples per path, zero failures, and equivalent workloads.
+The same subtraction is also calculated within every paired repetition. These
+are distribution differences, not fabricated per-request subtractions across
+two sequential GPU runs. A negative difference means that the sampled gateway
+distribution was faster; it is not a negative processing cost or proof that the
+gateway accelerates inference.
+
+The headline is emitted only when the predeclared condition has complete paired
+repetitions, at least two repetitions, at least 30 successful samples per path,
+zero failures, and equivalent workloads. When paired p50 differences are
+negative or change sign, the analyzer reports the observed throughput result and
+holds a positive gateway-added latency or speedup claim.
 
 ## Redis correctness outside the GPU benchmark
 
