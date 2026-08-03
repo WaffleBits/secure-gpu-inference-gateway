@@ -5,8 +5,12 @@ ENV AUDIT_LOG_PATH=/var/log/gateway/audit.log
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+ARG INSTALL_REDIS=false
+COPY requirements.txt requirements-redis.txt ./
+RUN pip install --no-cache-dir -r requirements.txt \
+    && if [ "$INSTALL_REDIS" = "true" ]; then \
+         pip install --no-cache-dir -r requirements-redis.txt; \
+       fi
 
 RUN adduser --system --uid 10001 --group gateway \
     && mkdir -p /var/log/gateway \

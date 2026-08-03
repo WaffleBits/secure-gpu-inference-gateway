@@ -1,0 +1,101 @@
+services:
+  redis:
+    image: redis:8.0.1-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 1s
+      retries: 30
+
+  vllm:
+    profiles: ["gpu"]
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:v0.26.0}
+    command:
+      - --model
+      - ${MODEL_ID:-Qwen/Qwen2.5-3B-Instruct}
+      - --served-model-name
+      - benchmark-echo
+      - --dtype
+      - ${VLLM_DTYPE:-auto}
+      - --max-model-len
+      - ${VLLM_MAX_MODEL_LEN:-4096}
+      - --gpu-memory-utilization
+      - ${VLLM_GPU_MEMORY_UTILIZATION:-0.90}
+      - --no-enable-prefix-caching
+    ports:
+      - "8001:8000"
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  gateway:
+    profiles: ["gpu"]
+    build:
+      context: ..
+      args:
+        INSTALL_REDIS: "true"
+    ports:
+      - "8000:8000"
+    environment:
+      ALLOW_DEMO_PRINCIPALS: "true"
+      AUDIT_LOG_PATH: /var/log/gateway/audit.jsonl
+      TRACE_EXPORT_PATH: /var/log/gateway/traces.jsonl
+      INFERENCE_BACKEND_COMPLETIONS_URL: http://vllm:8000/v1
+      INFERENCE_BACKEND_TIMEOUT_MS: "7200000"
+      INFERENCE_BACKEND_MAX_CONNECTIONS: "256"
+      INFERENCE_BACKEND_MAX_KEEPALIVE_CONNECTIONS: "128"
+      RATE_LIMIT_BACKEND: redis
+      REDIS_URL: redis://redis:6379/0
+      REDIS_KEY_PREFIX: sgig-benchmark
+      BENCHMARK_REQUESTS_PER_MINUTE: ${BENCHMARK_REQUESTS_PER_MINUTE:-1000000}
+      BENCHMARK_INPUT_TOKENS_PER_MINUTE: ${BENCHMARK_INPUT_TOKENS_PER_MINUTE:-100000000}
+    volumes:
+      - gateway-benchmark-logs:/var/log/gateway
+    depends_on:
+      redis:
+        condition: service_healthy
+      vllm:
+        condition: service_started
+
+  gateway-a:
+    profiles: ["redis-correctness"]
+    build:
+      context: ..
+      args:
+        INSTALL_REDIS: "true"
+    ports:
+      - "8010:8000"
+    environment: &replica_environment
+      ALLOW_DEMO_PRINCIPALS: "true"
+      AUDIT_LOG_PATH: /var/log/gateway/audit.jsonl
+      RATE_LIMIT_BACKEND: redis
+      REDIS_URL: redis://redis:6379/0
+      REDIS_KEY_PREFIX: sgig-replica-check
+      RATE_LIMIT_WINDOW_SECONDS: "2"
+      BENCHMARK_REQUESTS_PER_MINUTE: "10"
+      BENCHMARK_INPUT_TOKENS_PER_MINUTE: "100000"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  gateway-b:
+    profiles: ["redis-correctness"]
+    build:
+      context: ..
+      args:
+        INSTALL_REDIS: "true"
+    ports:
+      - "8011:8000"
+    environment: *replica_environment
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  gateway-benchmark-logs:

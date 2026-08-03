@@ -9,6 +9,8 @@ audit.log
 .env
 .env.*
 !.env.example
+bench/config.local.json
+dump.rdb
 
 .DS_Store
 Thumbs.db

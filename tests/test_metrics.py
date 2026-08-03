@@ -17,6 +17,7 @@ class MetricsTest(unittest.TestCase):
         )
         metrics.record_auth_event("jwt", "accepted")
         metrics.record_input_tokens("mission-summarizer", "allowed", 42)
+        metrics.observe_limiter_latency("requests", "redis", 0.0004)
 
         rendered = metrics.render_prometheus(MODEL_POLICIES)
 
@@ -54,6 +55,14 @@ class MetricsTest(unittest.TestCase):
         )
         self.assertIn(
             'security_gateway_inference_latency_seconds_sum{model_id="mission-summarizer"} 0.15',
+            rendered,
+        )
+        self.assertIn(
+            'security_gateway_limiter_latency_seconds_bucket{backend="redis",le="0.0005",limiter="requests"} 1',
+            rendered,
+        )
+        self.assertIn(
+            'security_gateway_limiter_latency_seconds_count{backend="redis",limiter="requests"} 1',
             rendered,
         )
 

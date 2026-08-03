@@ -160,8 +160,12 @@ class RedisFixedWindowTokenBudgetLimiter(_RedisFixedWindowLimiter):
 
 def build_limiters_from_env() -> tuple[object, object]:
     backend = os.getenv("RATE_LIMIT_BACKEND", "memory").strip().lower()
+    window_seconds = _positive_int_env("RATE_LIMIT_WINDOW_SECONDS", 60)
     if backend == "memory":
-        return FixedWindowRateLimiter(), FixedWindowTokenBudgetLimiter()
+        return (
+            FixedWindowRateLimiter(window_seconds=window_seconds),
+            FixedWindowTokenBudgetLimiter(window_seconds=window_seconds),
+        )
     if backend != "redis":
         raise ValueError("RATE_LIMIT_BACKEND must be memory or redis")
 
@@ -185,6 +189,30 @@ def build_limiters_from_env() -> tuple[object, object]:
     client.ping()
     key_prefix = os.getenv("REDIS_KEY_PREFIX", "sgig")
     return (
-        RedisFixedWindowRateLimiter(client, key_prefix=key_prefix),
-        RedisFixedWindowTokenBudgetLimiter(client, key_prefix=key_prefix),
+        RedisFixedWindowRateLimiter(
+            client,
+            window_seconds=window_seconds,
+            key_prefix=key_prefix,
+        ),
+        RedisFixedWindowTokenBudgetLimiter(
+            client,
+            window_seconds=window_seconds,
+            key_prefix=key_prefix,
+        ),
     )
+
+
+def limiter_backend_name(limiter: object) -> str:
+    if isinstance(limiter, _RedisFixedWindowLimiter):
+        return "redis"
+    return "memory"
+
+
+def _positive_int_env(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    value = int(raw)
+    if value < 1:
+        raise ValueError(f"{name} must be positive")
+    return value

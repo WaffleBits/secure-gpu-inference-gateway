@@ -1,8 +1,12 @@
 # Secure GPU Inference Gateway
 
-An inference gateway demo built around a mock backend. It shows the security control plane a real model-serving system needs: who can call which model, why the call is allowed, how abuse is throttled, and what evidence survives afterward.
+An inference gateway with a deterministic mock backend for review and a real,
+streaming OpenAI-compatible vLLM path for measurement. It shows who can call
+which model, why the call is allowed, how abuse is throttled, what evidence
+survives afterward, and what the complete control path costs.
 
-The backend is a mock. There is no GPU, no model weights, and no cloud account required. The point is the control plane, not the inference.
+The default quick start remains GPU-free. The real benchmark is opt-in and never
+substitutes synthetic values for measured vLLM/GPU results.
 
 ## Features
 
@@ -16,7 +20,10 @@ The backend is a mock. There is no GPU, no model weights, and no cloud account r
 - Prometheus `/metrics` for auth, policy, limiter, and latency.
 - Sanitized trace export in OpenTelemetry span form.
 - OTLP/HTTP collector payload generation.
-- Mock GPU backend, with an optional OpenAI-compatible adapter and bounded aggregate probe.
+- Mock GPU backend plus pooled non-streaming and streaming OpenAI-compatible adapters.
+- A full-policy `/v1/completions` proxy suitable for direct-vLLM versus gateway comparison.
+- Reproducible official-vLLM benchmark orchestration with TTFT, TPOT, ITL,
+  end-to-end percentiles, raw samples, resource capture, paired analysis, and plots.
 - Aggregate telemetry snapshot that correlates gateway counters and latency histograms with probe evidence.
 - Unit tests plus a threat model and architecture notes.
 - CI supply-chain evidence: pinned dependency audit, SPDX image SBOM, and a
@@ -141,13 +148,37 @@ Regenerate any artifact from its module, for example `python -m gateway.workload
 
 ## Optional model-serving adapter
 
-The mock backend is the default. To route an allowed request to a vLLM- or SGLang-style OpenAI-compatible endpoint, set `INFERENCE_BACKEND_COMPLETIONS_URL` to the backend base URL, its `/v1` URL, or the full `/v1/completions` URL. The adapter sends a bounded non-streaming request, validates the response shape, applies a five-second timeout, and returns a generic `502` with the trace ID on failure. Set `INFERENCE_BACKEND_API_KEY` through a secret when auth is required. The key, prompt, output, and endpoint errors stay out of audit and trace records.
+The mock backend is the default for `POST /v1/infer/{model_id}`. To route an
+allowed request to a vLLM- or SGLang-style OpenAI-compatible endpoint, set
+`INFERENCE_BACKEND_COMPLETIONS_URL` to the backend base URL, its `/v1` URL, or
+the full `/v1/completions` URL. The bounded inference route validates a
+non-streaming response; `POST /v1/completions` forwards streaming SSE bytes
+without decoding model output. Both return a generic `502` with the trace ID on
+failure. Set `INFERENCE_BACKEND_API_KEY` through a secret when auth is required.
+The key, prompt, output, endpoint URL, and upstream error stay out of audit and
+trace records.
 
 ```powershell
 $env:INFERENCE_BACKEND_COMPLETIONS_URL = "http://localhost:8001/v1"
 $env:INFERENCE_BACKEND_TIMEOUT_MS = "5000"
 python -m uvicorn gateway.app:app --port 8000
 ```
+
+The same configuration enables `POST /v1/completions`. That route accepts a
+bounded OpenAI-compatible completion body, applies the normal authentication,
+authorization, request limit, input-token budget, audit, metric, and trace path,
+then passes streaming SSE bytes through without decoding model output in the
+gateway. Backend connections use one process-wide pool. A missing or failing
+backend returns a generic `502` without exposing the upstream URL or error.
+
+## Real vLLM benchmark
+
+See [`bench/README.md`](bench/README.md) for the end-to-end benchmark. It uses
+the upstream `vllm bench serve` client to compare the same seeded token workloads
+directly against vLLM and through the full gateway at concurrency 1 through 64.
+Every run saves environment metadata, raw request samples, condition aggregates,
+resource samples, Redis limiter latency, a Markdown report, and engineering SVG
+plots. No benchmark number is checked in until it has been produced by a real run.
 
 ## Test
 
@@ -158,11 +189,11 @@ python -m unittest discover -s tests
 ## Next steps
 
 - Replace local HS256 tokens with JWKS-backed OIDC key rotation.
-- Add Redis-backed limiter integration tests against a disposable service and
-  keep Envoy descriptor parity checked before production rollout.
+- Run the live Redis atomicity and two-replica correctness profiles on every
+  supported deployment target and keep Envoy descriptor parity checked.
 - Replace synthetic capacity and resilience inputs with measured backend telemetry.
-- Run the bounded backend probe against a real authorized model-serving endpoint
-  and publish only aggregate latency, success, and token totals after review.
+- Repeat the real vLLM matrix on additional authorized GPU/model configurations
+  before drawing hardware-general conclusions.
 - Add policy-as-code examples, redaction controls, and negative authorization tests.
 - Add CI supply-chain evidence: SBOM, dependency scanning, container scanning.
 - Capture a telemetry-correlation snapshot after each explicitly authorized

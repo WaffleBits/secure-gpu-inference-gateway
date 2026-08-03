@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from gateway.rate_limit import (
     FixedWindowRateLimiter,
@@ -6,6 +7,7 @@ from gateway.rate_limit import (
     REDIS_FIXED_WINDOW_LUA,
     RedisFixedWindowRateLimiter,
     RedisFixedWindowTokenBudgetLimiter,
+    build_limiters_from_env,
 )
 
 
@@ -67,6 +69,17 @@ class RateLimitTest(unittest.TestCase):
 
         self.assertTrue(limiter.allow("user-1", "model-1", cost=3, limit=5))
         self.assertEqual(client.calls[0][2][1:], ("3", "60000", "5"))
+
+    def test_memory_backend_honors_configured_window(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {"RATE_LIMIT_BACKEND": "memory", "RATE_LIMIT_WINDOW_SECONDS": "7"},
+            clear=True,
+        ):
+            request_limiter, token_limiter = build_limiters_from_env()
+
+        self.assertEqual(request_limiter.window_seconds, 7)
+        self.assertEqual(token_limiter.window_seconds, 7)
 
 
 if __name__ == "__main__":
