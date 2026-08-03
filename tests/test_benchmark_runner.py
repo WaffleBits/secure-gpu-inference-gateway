@@ -35,6 +35,32 @@ class BenchmarkRunnerTest(unittest.TestCase):
                 schedule[offset]["request_count"], schedule[offset + 1]["request_count"]
             )
 
+    def test_schedule_uses_workload_specific_request_floor(self) -> None:
+        self.config["workloads"] = [
+            {
+                "name": "bounded",
+                "input_tokens": 32,
+                "output_tokens": 16,
+                "min_requests": 12,
+            }
+        ]
+        self.config["concurrency"] = [1, 64]
+        self.config["repetitions"] = 1
+        self.config["min_requests_per_condition"] = 99
+        self.config["requests_per_concurrency"] = 1
+
+        schedule = build_schedule(self.config)
+
+        self.assertEqual(
+            [condition["request_count"] for condition in schedule],
+            [12, 12, 64, 64],
+        )
+
+    def test_smoke_overrides_workload_specific_request_floor(self) -> None:
+        schedule = build_schedule(smoke_config(self.config))
+
+        self.assertEqual([condition["request_count"] for condition in schedule], [2, 2])
+
     def test_command_uses_official_detailed_streaming_benchmark(self) -> None:
         config = smoke_config(self.config)
         condition = build_schedule(config)[1]
@@ -116,6 +142,12 @@ class BenchmarkRunnerTest(unittest.TestCase):
         self.config["model"]["vllm_environment"] = {}
         self.config["python_environments"] = {"gateway": []}
         with self.assertRaisesRegex(ValueError, "non-empty argument lists"):
+            validate_config(self.config)
+
+    def test_workload_request_floor_is_validated(self) -> None:
+        self.config["workloads"][0]["min_requests"] = 0
+
+        with self.assertRaisesRegex(ValueError, "min_requests must be positive"):
             validate_config(self.config)
 
 
