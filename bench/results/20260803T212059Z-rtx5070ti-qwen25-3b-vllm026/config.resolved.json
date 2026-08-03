@@ -1,0 +1,125 @@
+{
+  "concurrency": [
+    1,
+    4,
+    8,
+    16,
+    32,
+    64
+  ],
+  "condition_timeout_seconds": 7200,
+  "continue_on_error": false,
+  "gateway_configuration": {
+    "audience": "secure-gpu-inference-gateway",
+    "audit_enabled": true,
+    "auth_mode": "HS256 JWT",
+    "backend_max_connections": 256,
+    "backend_max_keepalive_connections": 128,
+    "demo_principals_enabled": false,
+    "input_token_limit_per_minute": 100000000,
+    "issuer": "https://benchmark.local",
+    "rate_limit_backend": "redis",
+    "rate_limit_window_seconds": 60,
+    "redis_key_prefix": "sgig-benchmark-20260803",
+    "request_limit_per_minute": 1000000,
+    "trace_export_enabled": true,
+    "workers": 1
+  },
+  "gateway_metrics_url": "http://127.0.0.1:8000/metrics",
+  "git_command": [
+    "/mnt/c/Program Files/Git/cmd/git.exe"
+  ],
+  "headline": {
+    "concurrency": 8,
+    "workload": "medium"
+  },
+  "min_requests_per_condition": 20,
+  "model": {
+    "dtype": "bfloat16",
+    "id": "Qwen/Qwen2.5-3B-Instruct",
+    "quantization": null,
+    "revision": "aa8e72537993ba99e69dfaafa59ed015b17504d1",
+    "served_name": "benchmark-echo",
+    "vllm_environment": {
+      "VLLM_USE_FLASHINFER_SAMPLER": "0",
+      "VLLM_USE_V2_MODEL_RUNNER": "0"
+    },
+    "vllm_server_args": [
+      "Qwen/Qwen2.5-3B-Instruct",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "8001",
+      "--served-model-name",
+      "benchmark-echo",
+      "--dtype",
+      "bfloat16",
+      "--max-model-len",
+      "4096",
+      "--gpu-memory-utilization",
+      "0.90",
+      "--no-enable-prefix-caching",
+      "--seed",
+      "20260803"
+    ]
+  },
+  "monitored_pids": {
+    "gateway": 48981,
+    "redis": 28820,
+    "vllm_api": 48717,
+    "vllm_engine": 48760
+  },
+  "nvidia_smi_command": [
+    "/usr/lib/wsl/lib/nvidia-smi"
+  ],
+  "paths": {
+    "direct": {
+      "api_key_env": "VLLM_API_KEY",
+      "base_url": "http://127.0.0.1:8001",
+      "headers": {}
+    },
+    "gateway": {
+      "api_key_env": "GATEWAY_BEARER_TOKEN",
+      "base_url": "http://127.0.0.1:8000",
+      "headers": {}
+    }
+  },
+  "python_environments": {
+    "gateway": [
+      "/opt/sgig-gateway-venv/bin/python"
+    ]
+  },
+  "redis_url_env": "REDIS_URL",
+  "repetitions": 3,
+  "requests_per_concurrency": 1,
+  "run_name": "rtx5070ti-qwen25-3b-vllm026-long192",
+  "sample_interval_seconds": 0.5,
+  "schema_version": 1,
+  "seed": 20260803,
+  "vllm_command": [
+    "/opt/sgig-benchmark-venv/bin/vllm",
+    "bench",
+    "serve"
+  ],
+  "warmup_requests": 4,
+  "workloads": [
+    {
+      "input_tokens": 32,
+      "min_requests": 20,
+      "name": "short",
+      "output_tokens": 16
+    },
+    {
+      "input_tokens": 256,
+      "min_requests": 20,
+      "name": "medium",
+      "output_tokens": 128
+    },
+    {
+      "input_tokens": 512,
+      "min_requests": 12,
+      "name": "long",
+      "output_tokens": 192
+    }
+  ]
+}

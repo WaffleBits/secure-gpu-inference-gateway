@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="90" y="35" font-family="sans-serif" font-size="22" font-weight="600">p95 end-to-end latency versus concurrency</text>
+<line x1="90" y1="545.00" x2="760" y2="545.00" stroke="#e5e7eb"/>
+<text x="80" y="549.00" text-anchor="end" font-family="sans-serif" font-size="12">-8570.01</text>
+<line x1="90" y1="450.00" x2="760" y2="450.00" stroke="#e5e7eb"/>
+<text x="80" y="454.00" text-anchor="end" font-family="sans-serif" font-size="12">14441.76</text>
+<line x1="90" y1="355.00" x2="760" y2="355.00" stroke="#e5e7eb"/>
+<text x="80" y="359.00" text-anchor="end" font-family="sans-serif" font-size="12">37453.52</text>
+<line x1="90" y1="260.00" x2="760" y2="260.00" stroke="#e5e7eb"/>
+<text x="80" y="264.00" text-anchor="end" font-family="sans-serif" font-size="12">60465.28</text>
+<line x1="90" y1="165.00" x2="760" y2="165.00" stroke="#e5e7eb"/>
+<text x="80" y="169.00" text-anchor="end" font-family="sans-serif" font-size="12">83477.04</text>
+<line x1="90" y1="70.00" x2="760" y2="70.00" stroke="#e5e7eb"/>
+<text x="80" y="74.00" text-anchor="end" font-family="sans-serif" font-size="12">106488.80</text>
+<text x="90.00" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">1</text>
+<text x="224.00" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">4</text>
+<text x="358.00" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">8</text>
+<text x="492.00" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">16</text>
+<text x="626.00" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">32</text>
+<text x="760.00" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">64</text>
+<line x1="90" y1="70" x2="90" y2="545" stroke="#111827"/>
+<line x1="90" y1="545" x2="760" y2="545" stroke="#111827"/>
+<text x="425.0" y="600" text-anchor="middle" font-family="sans-serif" font-size="14">Concurrency</text>
+<text transform="translate(22 307.5) rotate(-90)" text-anchor="middle" font-family="sans-serif" font-size="14">Latency (ms)</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2.5" points="90.00,464.28 224.00,367.98 358.00,344.49 492.00,330.41 626.00,290.44 760.00,117.79"/>
+<circle cx="90.00" cy="464.28" r="3.5" fill="#2563eb"/>
+<circle cx="224.00" cy="367.98" r="3.5" fill="#2563eb"/>
+<circle cx="358.00" cy="344.49" r="3.5" fill="#2563eb"/>
+<circle cx="492.00" cy="330.41" r="3.5" fill="#2563eb"/>
+<circle cx="626.00" cy="290.44" r="3.5" fill="#2563eb"/>
+<circle cx="760.00" cy="117.79" r="3.5" fill="#2563eb"/>
+<line x1="785" y1="70" x2="810" y2="70" stroke="#2563eb" stroke-width="3"/>
+<text x="820" y="74" font-family="sans-serif" font-size="12">long direct</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2.5" points="90.00,463.68 224.00,363.83 358.00,359.37 492.00,322.28 626.00,278.30 760.00,109.58"/>
+<circle cx="90.00" cy="463.68" r="3.5" fill="#dc2626"/>
+<circle cx="224.00" cy="363.83" r="3.5" fill="#dc2626"/>
+<circle cx="358.00" cy="359.37" r="3.5" fill="#dc2626"/>
+<circle cx="492.00" cy="322.28" r="3.5" fill="#dc2626"/>
+<circle cx="626.00" cy="278.30" r="3.5" fill="#dc2626"/>
+<circle cx="760.00" cy="109.58" r="3.5" fill="#dc2626"/>
+<line x1="785" y1="94" x2="810" y2="94" stroke="#dc2626" stroke-width="3"/>
+<text x="820" y="98" font-family="sans-serif" font-size="12">long gateway</text>
+<polyline fill="none" stroke="#059669" stroke-width="2.5" points="90.00,476.98 224.00,412.06 358.00,391.09 492.00,380.19 626.00,373.42 760.00,257.04"/>
+<circle cx="90.00" cy="476.98" r="3.5" fill="#059669"/>
+<circle cx="224.00" cy="412.06" r="3.5" fill="#059669"/>
+<circle cx="358.00" cy="391.09" r="3.5" fill="#059669"/>
+<circle cx="492.00" cy="380.19" r="3.5" fill="#059669"/>
+<circle cx="626.00" cy="373.42" r="3.5" fill="#059669"/>
+<circle cx="760.00" cy="257.04" r="3.5" fill="#059669"/>
+<line x1="785" y1="118" x2="810" y2="118" stroke="#059669" stroke-width="3"/>
+<text x="820" y="122" font-family="sans-serif" font-size="12">medium direct</text>
+<polyline fill="none" stroke="#d97706" stroke-width="2.5" points="90.00,476.57 224.00,409.71 358.00,396.31 492.00,371.25 626.00,368.32 760.00,262.79"/>
+<circle cx="90.00" cy="476.57" r="3.5" fill="#d97706"/>
+<circle cx="224.00" cy="409.71" r="3.5" fill="#d97706"/>
+<circle cx="358.00" cy="396.31" r="3.5" fill="#d97706"/>
+<circle cx="492.00" cy="371.25" r="3.5" fill="#d97706"/>
+<circle cx="626.00" cy="368.32" r="3.5" fill="#d97706"/>
+<circle cx="760.00" cy="262.79" r="3.5" fill="#d97706"/>
+<line x1="785" y1="142" x2="810" y2="142" stroke="#d97706" stroke-width="3"/>
+<text x="820" y="146" font-family="sans-serif" font-size="12">medium gateway</text>
+<polyline fill="none" stroke="#7c3aed" stroke-width="2.5" points="90.00,505.42 224.00,494.82 358.00,492.98 492.00,489.07 626.00,492.94 760.00,477.21"/>
+<circle cx="90.00" cy="505.42" r="3.5" fill="#7c3aed"/>
+<circle cx="224.00" cy="494.82" r="3.5" fill="#7c3aed"/>
+<circle cx="358.00" cy="492.98" r="3.5" fill="#7c3aed"/>
+<circle cx="492.00" cy="489.07" r="3.5" fill="#7c3aed"/>
+<circle cx="626.00" cy="492.94" r="3.5" fill="#7c3aed"/>
+<circle cx="760.00" cy="477.21" r="3.5" fill="#7c3aed"/>
+<line x1="785" y1="166" x2="810" y2="166" stroke="#7c3aed" stroke-width="3"/>
+<text x="820" y="170" font-family="sans-serif" font-size="12">short direct</text>
+<polyline fill="none" stroke="#0891b2" stroke-width="2.5" points="90.00,505.38 224.00,493.52 358.00,493.98 492.00,494.04 626.00,490.26 760.00,473.22"/>
+<circle cx="90.00" cy="505.38" r="3.5" fill="#0891b2"/>
+<circle cx="224.00" cy="493.52" r="3.5" fill="#0891b2"/>
+<circle cx="358.00" cy="493.98" r="3.5" fill="#0891b2"/>
+<circle cx="492.00" cy="494.04" r="3.5" fill="#0891b2"/>
+<circle cx="626.00" cy="490.26" r="3.5" fill="#0891b2"/>
+<circle cx="760.00" cy="473.22" r="3.5" fill="#0891b2"/>
+<line x1="785" y1="190" x2="810" y2="190" stroke="#0891b2" stroke-width="3"/>
+<text x="820" y="194" font-family="sans-serif" font-size="12">short gateway</text>
+</svg>

@@ -178,7 +178,14 @@ the upstream `vllm bench serve` client to compare the same seeded token workload
 directly against vLLM and through the full gateway at concurrency 1 through 64.
 Every run saves environment metadata, raw request samples, condition aggregates,
 resource samples, Redis limiter latency, a Markdown report, and engineering SVG
-plots. No benchmark number is checked in until it has been produced by a real run.
+plots. The checked RTX 5070 Ti / Qwen2.5-3B run completed 3,000 measured requests
+with zero failures. At the predeclared medium workload and concurrency 8, the
+full gateway observed 103.83% of direct-vLLM request throughput across 60
+requests per path (101.37% to 108.94% across paired repetitions). This is an
+observed no-throughput-loss result, not a speedup claim; serving-runtime drift
+prevented a defensible positive latency-overhead estimate. See the
+[`measured report`](bench/results/20260803T212059Z-rtx5070ti-qwen25-3b-vllm026/report.md)
+and [`validation note`](bench/results/20260803T212059Z-rtx5070ti-qwen25-3b-vllm026/VALIDATION.md).
 
 ## Test
 

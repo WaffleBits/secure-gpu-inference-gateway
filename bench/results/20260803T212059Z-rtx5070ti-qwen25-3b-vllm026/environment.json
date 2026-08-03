@@ -1,0 +1,172 @@
+{
+  "benchmark": {
+    "concurrency": [
+      1,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "repetitions": 3,
+    "seed": 20260803,
+    "vllm_command": [
+      "/opt/sgig-benchmark-venv/bin/vllm",
+      "bench",
+      "serve"
+    ],
+    "workloads": [
+      {
+        "input_tokens": 32,
+        "min_requests": 20,
+        "name": "short",
+        "output_tokens": 16
+      },
+      {
+        "input_tokens": 256,
+        "min_requests": 20,
+        "name": "medium",
+        "output_tokens": 128
+      },
+      {
+        "input_tokens": 512,
+        "min_requests": 12,
+        "name": "long",
+        "output_tokens": 192
+      }
+    ]
+  },
+  "captured_at": "2026-08-03T21:20:59.754418Z",
+  "cpu": {
+    "logical_cores": 16,
+    "model": "AMD Ryzen 7 9800X3D 8-Core Processor",
+    "physical_cores": 8
+  },
+  "endpoint_checks": {
+    "direct": {
+      "model_ids": [
+        "benchmark-echo"
+      ],
+      "reachable": true,
+      "status": 200
+    },
+    "gateway": {
+      "model_ids": [],
+      "reachable": true,
+      "status": 200
+    }
+  },
+  "gateway": {
+    "audience": "secure-gpu-inference-gateway",
+    "audit_enabled": true,
+    "auth_mode": "HS256 JWT",
+    "backend_max_connections": 256,
+    "backend_max_keepalive_connections": 128,
+    "demo_principals_enabled": false,
+    "input_token_limit_per_minute": 100000000,
+    "issuer": "https://benchmark.local",
+    "rate_limit_backend": "redis",
+    "rate_limit_window_seconds": 60,
+    "redis_key_prefix": "sgig-benchmark-20260803",
+    "request_limit_per_minute": 1000000,
+    "trace_export_enabled": true,
+    "workers": 1
+  },
+  "git": {
+    "branch": "feature/vllm-e2e-benchmark",
+    "commit": "55c0a0a98fcfc8ddd3553a609072e454c0002d5b",
+    "dirty": false
+  },
+  "gpu": {
+    "available": true,
+    "cuda_version": "13.2",
+    "devices": [
+      {
+        "compute_capability": "12.0",
+        "driver_version": "595.97",
+        "memory_total_mib": 16303,
+        "name": "NVIDIA GeForce RTX 5070 Ti",
+        "uuid": "GPU-e9e9a9f7-a314-409a-8490-aad686a7624b"
+      }
+    ]
+  },
+  "model": {
+    "dtype": "bfloat16",
+    "id": "Qwen/Qwen2.5-3B-Instruct",
+    "quantization": null,
+    "revision": "aa8e72537993ba99e69dfaafa59ed015b17504d1",
+    "served_name": "benchmark-echo",
+    "vllm_environment": {
+      "VLLM_USE_FLASHINFER_SAMPLER": "0",
+      "VLLM_USE_V2_MODEL_RUNNER": "0"
+    },
+    "vllm_server_args": [
+      "Qwen/Qwen2.5-3B-Instruct",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "8001",
+      "--served-model-name",
+      "benchmark-echo",
+      "--dtype",
+      "bfloat16",
+      "--max-model-len",
+      "4096",
+      "--gpu-memory-utilization",
+      "0.90",
+      "--no-enable-prefix-caching",
+      "--seed",
+      "20260803"
+    ]
+  },
+  "operating_system": {
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "release": "6.6.87.2-microsoft-standard-WSL2",
+    "system": "Linux",
+    "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025"
+  },
+  "python": {
+    "executable": "python",
+    "implementation": "CPython",
+    "version": "3.12.3"
+  },
+  "python_environments": {
+    "gateway": {
+      "available": true,
+      "packages": {
+        "fastapi": "0.139.2",
+        "httpx": "0.28.1",
+        "psutil": "7.2.2",
+        "redis": "8.0.1",
+        "torch": null,
+        "vllm": null
+      },
+      "python": "3.12.3"
+    }
+  },
+  "redis": {
+    "configuration": {
+      "appendfsync": "everysec",
+      "appendonly": "no",
+      "maxmemory-policy": "noeviction",
+      "save": ""
+    },
+    "configured": true,
+    "ping_latency_ms": 3.444,
+    "version": "7.0.15"
+  },
+  "software": {
+    "fastapi": "0.136.3",
+    "httpx": "0.28.1",
+    "psutil": "7.2.2",
+    "redis": "8.0.1",
+    "torch": "2.11.0",
+    "vllm": "0.26.0"
+  },
+  "system_ram_bytes": 16267804672,
+  "torch_runtime": {
+    "available": true,
+    "cuda_build": "13.0",
+    "version": "2.11.0+cu130"
+  }
+}
