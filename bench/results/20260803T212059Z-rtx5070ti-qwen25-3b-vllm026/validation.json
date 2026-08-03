@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "measurement": {
+    "captured_at": "2026-08-03T21:20:59.754418Z",
+    "measurement_commit": "55c0a0a98fcfc8ddd3553a609072e454c0002d5b",
+    "analysis_commit": "b41b5fa9d6d31bd26743bb7c707e0a6d90b2605c"
+  },
+  "matrix": {
+    "conditions": 108,
+    "comparisons": 18,
+    "measured_requests": 3000,
+    "measured_requests_per_path": 1500,
+    "failed_requests": 0,
+    "resource_samples": 13868,
+    "upstream_detailed_results": 108,
+    "condition_logs": 108
+  },
+  "gateway_control_path": {
+    "measured_requests": 1500,
+    "warmup_requests": 216,
+    "jwt_accepts": 1716,
+    "allowed_requests": 1716,
+    "audit_events": 1716,
+    "trace_spans": 1716,
+    "unique_audit_trace_ids": 1716,
+    "unique_trace_span_ids": 1716,
+    "audit_trace_id_sets_match": true
+  },
+  "predeclared_headline": {
+    "workload": "medium",
+    "concurrency": 8,
+    "successful_requests_per_path": 60,
+    "direct_requests_per_second": 0.345163,
+    "gateway_requests_per_second": 0.358393,
+    "throughput_retained_percent": 103.832972,
+    "paired_run_retained_percent_min": 101.36608,
+    "paired_run_retained_percent_max": 108.939525,
+    "latency_claim_status": "held"
+  },
+  "checks": {
+    "all_conditions_completed": true,
+    "all_samples_successful": true,
+    "all_workloads_equivalent": true,
+    "all_headline_gates_passed": true,
+    "measurement_git_tree_clean": true,
+    "limiter_bounds_monotonic_or_unavailable": true,
+    "known_local_secret_absent": true,
+    "jwt_material_absent": true,
+    "prompt_payloads_absent": true,
+    "generated_text_absent": true
+  }
+}
