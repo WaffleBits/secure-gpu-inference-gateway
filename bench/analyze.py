@@ -83,11 +83,12 @@ def analyze_run(run_dir: Path, config: dict[str, Any] | None = None) -> dict[str
 
     condition_by_id = {row["condition_id"]: row for row in conditions}
     groups = summarize_groups(samples, conditions, resources, condition_by_id)
-    comparisons = compare_groups(samples, groups, config)
+    comparisons = compare_groups(samples, groups, condition_by_id, config)
     headline = build_headline(comparisons, config)
     summary = {
         "schema_version": 1,
         "source": "vllm bench serve --save-detailed",
+        "analysis_method": "pooled distributions with paired-repetition diagnostics",
         "groups": groups,
         "comparisons": comparisons,
         "headline": headline,
@@ -213,6 +214,7 @@ def summarize_groups(
 def compare_groups(
     samples: list[dict[str, Any]],
     groups: list[dict[str, Any]],
+    condition_by_id: dict[str, dict[str, Any]],
     config: dict[str, Any],
 ) -> list[dict[str, Any]]:
     indexed = {
@@ -245,12 +247,21 @@ def compare_groups(
                 int(concurrency),
                 int(config["repetitions"]),
             )
+            paired_runs = paired_run_comparisons(
+                sample_index,
+                condition_by_id,
+                workload,
+                int(concurrency),
+                int(config["repetitions"]),
+            )
             comparisons.append(
                 {
                     "workload": workload,
                     "concurrency": int(concurrency),
                     "workload_equivalent": equivalent,
                     "equivalence_notes": equivalence_notes,
+                    "paired_runs": paired_runs,
+                    "paired_run_variation": summarize_paired_runs(paired_runs),
                     "direct": direct,
                     "gateway": gateway,
                     "gateway_overhead_ms": {
@@ -313,6 +324,79 @@ def workload_equivalence(
     return equivalent, notes
 
 
+def paired_run_comparisons(
+    sample_index: dict[tuple[str, int, int, str], list[dict[str, Any]]],
+    condition_by_id: dict[str, dict[str, Any]],
+    workload: str,
+    concurrency: int,
+    repetitions: int,
+) -> list[dict[str, Any]]:
+    paired_runs = []
+    for repetition in range(repetitions):
+        paths: dict[str, dict[str, Any]] = {}
+        for path in ("direct", "gateway"):
+            rows = sample_index.get((workload, concurrency, repetition, path), [])
+            successful = [row for row in rows if row.get("success")]
+            if not rows:
+                continue
+            condition = condition_by_id.get(rows[0]["condition_id"], {})
+            latencies = [
+                float(row["total_latency_ms"])
+                for row in successful
+                if isinstance(row.get("total_latency_ms"), int | float)
+            ]
+            ttfts = [
+                float(row["ttft_ms"])
+                for row in successful
+                if isinstance(row.get("ttft_ms"), int | float)
+            ]
+            paths[path] = {
+                "condition_id": rows[0]["condition_id"],
+                "completed_requests": int(condition.get("completed_requests") or 0),
+                "failed_requests": int(condition.get("failed_requests") or 0),
+                "request_throughput": rounded(condition.get("request_throughput")),
+                "p50_latency_ms": rounded(percentile(latencies, 50)),
+                "p95_latency_ms": rounded(percentile(latencies, 95)),
+                "p50_ttft_ms": rounded(percentile(ttfts, 50)),
+            }
+        if set(paths) != {"direct", "gateway"}:
+            continue
+        direct = paths["direct"]
+        gateway = paths["gateway"]
+        paired_runs.append(
+            {
+                "repetition": repetition,
+                "direct": direct,
+                "gateway": gateway,
+                "p50_latency_difference_ms": difference(
+                    gateway["p50_latency_ms"], direct["p50_latency_ms"]
+                ),
+                "p95_latency_difference_ms": difference(
+                    gateway["p95_latency_ms"], direct["p95_latency_ms"]
+                ),
+                "p50_ttft_difference_ms": difference(
+                    gateway["p50_ttft_ms"], direct["p50_ttft_ms"]
+                ),
+                "throughput_retained_percent": ratio_percent(
+                    gateway["request_throughput"], direct["request_throughput"]
+                ),
+            }
+        )
+    return paired_runs
+
+
+def summarize_paired_runs(paired_runs: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        name: distribution(row.get(name) for row in paired_runs)
+        for name in (
+            "p50_latency_difference_ms",
+            "p95_latency_difference_ms",
+            "p50_ttft_difference_ms",
+            "throughput_retained_percent",
+        )
+    }
+
+
 def build_headline(
     comparisons: list[dict[str, Any]],
     config: dict[str, Any],
@@ -344,6 +428,8 @@ def build_headline(
             match["direct"]["failed_requests"] == 0
             and match["gateway"]["failed_requests"] == 0
         ),
+        "paired_repetitions_complete": len(match.get("paired_runs", []))
+        == min(match["direct"]["repetitions"], match["gateway"]["repetitions"]),
     }
     if not all(gates.values()):
         return {
@@ -353,6 +439,48 @@ def build_headline(
         }
     overhead = match["gateway_overhead_ms"]["p50"]
     retained = match["throughput_retained_percent"]
+    paired_runs = match["paired_runs"]
+    paired_variation = match["paired_run_variation"]
+    paired_p50 = paired_variation["p50_latency_difference_ms"]
+    paired_retained = paired_variation["throughput_retained_percent"]
+    latency_differences = [
+        float(row["p50_latency_difference_ms"])
+        for row in paired_runs
+        if row.get("p50_latency_difference_ms") is not None
+    ]
+    latency_claim_supported = bool(latency_differences) and all(
+        value >= 0 for value in latency_differences
+    )
+    if latency_claim_supported:
+        text = (
+            f"At {match['concurrency']} concurrent {match['workload']} requests, "
+            f"the full gateway added {format_number(overhead)} ms p50 end-to-end "
+            f"latency and retained {format_number(retained)}% of direct-vLLM "
+            "request throughput."
+        )
+        latency_claim = {
+            "status": "supported",
+            "reason": "every paired repetition had a non-negative p50 difference",
+        }
+    else:
+        text = (
+            f"At {match['concurrency']} concurrent {match['workload']} requests, "
+            f"the full gateway completed {match['gateway']['completed_requests']} "
+            f"measured requests per path with zero errors and observed "
+            f"{format_number(retained)}% of direct-vLLM request throughput "
+            f"(paired-run range {format_number(paired_retained['min'])}% to "
+            f"{format_number(paired_retained['max'])}%). Paired p50 latency "
+            f"differences ranged from {format_number(paired_p50['min'])} ms to "
+            f"{format_number(paired_p50['max'])} ms, so no positive "
+            "gateway-added latency or speedup claim is made."
+        )
+        latency_claim = {
+            "status": "held",
+            "reason": (
+                "negative or mixed paired p50 differences do not identify a positive "
+                "gateway processing cost and are not evidence of a gateway speedup"
+            ),
+        }
     return {
         "status": "supported",
         "gates": gates,
@@ -360,12 +488,10 @@ def build_headline(
         "concurrency": match["concurrency"],
         "p50_overhead_ms": overhead,
         "throughput_retained_percent": retained,
-        "text": (
-            f"At {match['concurrency']} concurrent {match['workload']} requests, "
-            f"the full gateway added {format_number(overhead)} ms p50 end-to-end "
-            f"latency and retained {format_number(retained)}% of direct-vLLM "
-            "request throughput."
-        ),
+        "paired_run_variation": paired_variation,
+        "paired_runs": paired_runs,
+        "latency_claim": latency_claim,
+        "text": text,
     }
 
 
@@ -389,14 +515,39 @@ def render_report(
         lines.append(headline["text"])
     else:
         lines.append(f"No portfolio headline is supported: {headline['reason']}.")
+    if headline.get("paired_runs"):
+        lines.extend(
+            [
+                "",
+                "### Paired repetitions",
+                "",
+                "| Rep | Direct req/s | Gateway req/s | Throughput retained | "
+                "Direct p50 | Gateway p50 | p50 difference (G-D) |",
+                "|---:|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for paired in headline["paired_runs"]:
+            lines.append(
+                "| {rep} | {direct_rps} | {gateway_rps} | {retained}% | "
+                "{direct_p50} ms | {gateway_p50} ms | {difference} ms |".format(
+                    rep=paired["repetition"] + 1,
+                    direct_rps=format_number(paired["direct"]["request_throughput"]),
+                    gateway_rps=format_number(paired["gateway"]["request_throughput"]),
+                    retained=format_number(paired["throughput_retained_percent"]),
+                    direct_p50=format_number(paired["direct"]["p50_latency_ms"]),
+                    gateway_p50=format_number(paired["gateway"]["p50_latency_ms"]),
+                    difference=format_signed(paired["p50_latency_difference_ms"]),
+                )
+            )
     lines.extend(
         [
             "",
             "## Direct versus full gateway",
             "",
             "| Workload | C | Direct req/s | Gateway req/s | Req/s change | "
-            "Direct output tok/s | Gateway output tok/s | p50 overhead | p95 overhead | "
-            "p99 overhead | TTFT p50 overhead | Errors direct/gateway | Fair |",
+            "Direct output tok/s | Gateway output tok/s | pooled p50 diff (G-D) | "
+            "pooled p95 diff (G-D) | pooled p99 diff (G-D) | TTFT p50 diff (G-D) | "
+            "Errors direct/gateway | Fair |",
             "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|",
         ]
     )
@@ -477,9 +628,13 @@ def render_report(
             "",
             "## Interpretation constraints",
             "",
-            "- Absolute overhead is the gateway-path percentile minus the matching "
-            "direct-path percentile; requests are distribution-paired by condition, "
-            "not one-to-one latency-subtracted while sharing a live GPU scheduler.",
+            "- Every latency difference is gateway minus direct. Pooled differences "
+            "subtract the two pooled path percentiles; paired-repetition differences "
+            "subtract percentiles within each repetition. They are not one-to-one "
+            "request subtractions while sharing a live GPU scheduler.",
+            "- A negative difference means the sampled gateway distribution was faster. "
+            "It is not a negative internal processing cost or, by itself, evidence that "
+            "the gateway accelerates inference.",
             "- Throughput aggregates completed requests or output tokens over the sum "
             "of official client-measured condition durations.",
             "- TTFT, TPOT, and ITL use vLLM's streaming client definitions. ITL is "
@@ -552,8 +707,8 @@ def write_plots(
             )
     write_svg_chart(
         plots_dir / "gateway-overhead-vs-concurrency.svg",
-        "Gateway-added end-to-end latency versus concurrency",
-        "Gateway overhead (ms)",
+        "Gateway minus direct end-to-end latency versus concurrency",
+        "Latency difference (ms)",
         overhead_series,
         include_zero=True,
     )
@@ -721,17 +876,18 @@ def combine_limiter_latency(conditions: list[dict[str, Any]]) -> dict[str, Any] 
             "backend": rows[0].get("backend"),
             "count": count,
             "mean_ms": round(weighted_sum / count, 6) if count else None,
-            "p50_upper_bound_ms": max_present(
-                row.get("p50_upper_bound_ms") for row in rows
-            ),
-            "p95_upper_bound_ms": max_present(
-                row.get("p95_upper_bound_ms") for row in rows
-            ),
-            "p99_upper_bound_ms": max_present(
-                row.get("p99_upper_bound_ms") for row in rows
-            ),
+            "p50_upper_bound_ms": conservative_max_bound(rows, "p50_upper_bound_ms"),
+            "p95_upper_bound_ms": conservative_max_bound(rows, "p95_upper_bound_ms"),
+            "p99_upper_bound_ms": conservative_max_bound(rows, "p99_upper_bound_ms"),
         }
     return result
+
+
+def conservative_max_bound(rows: list[dict[str, Any]], key: str) -> float | None:
+    observed = [row for row in rows if int(row.get("count") or 0) > 0]
+    if not observed or any(row.get(key) is None for row in observed):
+        return None
+    return max(float(row[key]) for row in observed)
 
 
 def group_key(row: dict[str, Any]) -> tuple[str, str, int]:
@@ -765,11 +921,6 @@ def population_stddev(values: Iterable[float | None]) -> float | None:
     if not numbers:
         return None
     return round(statistics.pstdev(numbers), 6)
-
-
-def max_present(values: Iterable[float | None]) -> float | None:
-    numbers = [float(value) for value in values if value is not None]
-    return max(numbers) if numbers else None
 
 
 def format_number(value: float | int | None) -> str:
