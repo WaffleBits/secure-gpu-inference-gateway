@@ -24,7 +24,7 @@ class AuthSettings:
     jwt_hs256_secret: str | None = None
     roles_claim: str = "roles"
     scopes_claim: str = "scope"
-    allow_demo_principals: bool = True
+    allow_demo_principals: bool = False
     clock_skew_seconds: int = 60
 
     @classmethod
@@ -35,7 +35,7 @@ class AuthSettings:
             jwt_hs256_secret=_empty_to_none(os.getenv("OIDC_JWT_HS256_SECRET")),
             roles_claim=os.getenv("OIDC_ROLES_CLAIM", "roles"),
             scopes_claim=os.getenv("OIDC_SCOPES_CLAIM", "scope"),
-            allow_demo_principals=_parse_bool(os.getenv("ALLOW_DEMO_PRINCIPALS"), True),
+            allow_demo_principals=_parse_bool(os.getenv("ALLOW_DEMO_PRINCIPALS"), False),
             clock_skew_seconds=int(os.getenv("OIDC_CLOCK_SKEW_SECONDS", "60")),
         )
 

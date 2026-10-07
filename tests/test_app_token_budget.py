@@ -8,6 +8,7 @@ from fastapi import HTTPException, Response
 
 import gateway.app as app_module
 from gateway.audit import JsonlAuditSink
+from gateway.identity import AuthSettings
 from gateway.metrics import GatewayMetrics
 from gateway.rate_limit import FixedWindowRateLimiter, FixedWindowTokenBudgetLimiter
 
@@ -21,6 +22,7 @@ class AppTokenBudgetTest(unittest.TestCase):
             old_metrics = app_module.metrics
             old_rate_limiter = app_module.rate_limiter
             old_token_budget_limiter = app_module.token_budget_limiter
+            old_auth_settings = app_module.auth_settings
             try:
                 app_module.MODEL_POLICIES["benchmark-echo"] = replace(
                     old_policy,
@@ -30,6 +32,7 @@ class AppTokenBudgetTest(unittest.TestCase):
                 app_module.metrics = GatewayMetrics()
                 app_module.rate_limiter = FixedWindowRateLimiter()
                 app_module.token_budget_limiter = FixedWindowTokenBudgetLimiter()
+                app_module.auth_settings = AuthSettings(allow_demo_principals=True)
 
                 first_response = app_module.infer(
                     "benchmark-echo",
@@ -82,6 +85,7 @@ class AppTokenBudgetTest(unittest.TestCase):
                 app_module.metrics = old_metrics
                 app_module.rate_limiter = old_rate_limiter
                 app_module.token_budget_limiter = old_token_budget_limiter
+                app_module.auth_settings = old_auth_settings
 
 
 if __name__ == "__main__":
