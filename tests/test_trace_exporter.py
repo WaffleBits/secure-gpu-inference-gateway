@@ -7,6 +7,7 @@ from fastapi import Response
 
 import gateway.app as app_module
 from gateway.audit import JsonlAuditSink
+from gateway.identity import AuthSettings
 from gateway.trace_context import RequestTrace
 from gateway.trace_exporter import JsonlTraceExporter, build_span_record
 
@@ -56,9 +57,11 @@ class TraceExporterTest(unittest.TestCase):
             trace_path = Path(tmpdir) / "traces.jsonl"
             old_trace_exporter = app_module.trace_exporter
             old_audit_sink = app_module.audit_sink
+            old_auth_settings = app_module.auth_settings
             try:
                 app_module.trace_exporter = JsonlTraceExporter(trace_path)
                 app_module.audit_sink = JsonlAuditSink(str(Path(tmpdir) / "audit.jsonl"))
+                app_module.auth_settings = AuthSettings(allow_demo_principals=True)
                 response = app_module.infer(
                     "mission-summarizer",
                     app_module.InferenceRequest(
@@ -80,6 +83,7 @@ class TraceExporterTest(unittest.TestCase):
             finally:
                 app_module.trace_exporter = old_trace_exporter
                 app_module.audit_sink = old_audit_sink
+                app_module.auth_settings = old_auth_settings
 
 
 if __name__ == "__main__":

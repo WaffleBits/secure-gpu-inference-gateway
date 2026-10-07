@@ -9,6 +9,7 @@ from fastapi import HTTPException, Response
 
 import gateway.app as app_module
 from gateway.audit import JsonlAuditSink
+from gateway.identity import AuthSettings
 from gateway.metrics import GatewayMetrics
 from gateway.backend_adapter import (
     BackendAdapterError,
@@ -128,9 +129,11 @@ class BackendAdapterTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             old_audit_sink = app_module.audit_sink
             old_metrics = app_module.metrics
+            old_auth_settings = app_module.auth_settings
             try:
                 app_module.audit_sink = JsonlAuditSink(str(Path(tmpdir) / "audit.jsonl"))
                 app_module.metrics = GatewayMetrics()
+                app_module.auth_settings = AuthSettings(allow_demo_principals=True)
                 with patch.object(
                     app_module,
                     "run_configured_inference",
@@ -162,6 +165,7 @@ class BackendAdapterTest(unittest.TestCase):
             finally:
                 app_module.audit_sink = old_audit_sink
                 app_module.metrics = old_metrics
+                app_module.auth_settings = old_auth_settings
 
 
 if __name__ == "__main__":

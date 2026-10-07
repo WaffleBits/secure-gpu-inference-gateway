@@ -6,7 +6,9 @@ ENV AUDIT_LOG_PATH=/var/log/gateway/audit.log
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Pip and its vendored build/download libraries are build-time only.
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip uninstall --yes pip
 
 RUN adduser --system --uid 10001 --group gateway \
     && mkdir -p /var/log/gateway \
