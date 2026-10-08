@@ -8,7 +8,9 @@ WORKDIR /app
 COPY requirements.txt .
 # Pip and its vendored build/download libraries are build-time only.
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip uninstall --yes pip
+    && python -m pip uninstall --yes pip \
+    && rm -rf /usr/local/lib/python3.13/ensurepip \
+        /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.13
 
 RUN adduser --system --uid 10001 --group gateway \
     && mkdir -p /var/log/gateway \
