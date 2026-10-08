@@ -6,7 +6,10 @@ ENV AUDIT_LOG_PATH=/var/log/gateway/audit.log
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -m pip uninstall --yes pip \
+    && rm -rf /usr/local/lib/python3.13/ensurepip \
+        /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.13
 
 RUN adduser --system --uid 10001 --group gateway \
     && mkdir -p /var/log/gateway \
