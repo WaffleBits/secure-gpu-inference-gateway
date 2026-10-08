@@ -110,6 +110,27 @@ review. The container scan fails on unresolved high or critical vulnerabilities;
 the checked-in posture tests keep the Docker and Kubernetes hardening controls
 from silently drifting.
 
+The CI job also builds this image, loads it into a disposable Kind cluster, and
+applies `deploy/kubernetes/gateway.yaml`. `scripts/kubernetes_smoke.py` checks
+the two ready replicas, effective Pod security/resource settings, disabled
+service-account token mounting, and internal-only Service. It then reaches the
+Service health and metrics endpoints and verifies that a demo-principal
+inference request is denied. The smoke test refuses non-Kind contexts. This is
+local cluster validation, not managed-cloud or production operation.
+
+To reproduce it locally:
+
+```bash
+kind create cluster --name gateway-smoke
+docker build --tag secure-gpu-inference-gateway:0.1.0 .
+kind load docker-image secure-gpu-inference-gateway:0.1.0 --name gateway-smoke
+kubectl apply --filename deploy/kubernetes/gateway.yaml
+kubectl rollout status deployment/secure-gpu-inference-gateway \
+  --namespace secure-gpu-inference --timeout=180s
+python scripts/kubernetes_smoke.py
+kind delete cluster --name gateway-smoke
+```
+
 The sanitized trace omits prompt text, model output, access reason, and principal ID. One span from `artifacts/sanitized-trace-evidence.jsonl`:
 
 ```json

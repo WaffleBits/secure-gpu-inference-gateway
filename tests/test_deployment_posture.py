@@ -19,6 +19,7 @@ class DeploymentPostureTests(unittest.TestCase):
         )
 
         required_controls = (
+            "automountServiceAccountToken: false",
             "runAsNonRoot: true",
             "allowPrivilegeEscalation: false",
             "readOnlyRootFilesystem: true",
