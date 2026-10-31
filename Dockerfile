@@ -5,9 +5,13 @@ ENV AUDIT_LOG_PATH=/var/log/gateway/audit.log
 
 WORKDIR /app
 
-COPY requirements.txt .
+ARG INSTALL_REDIS=false
+COPY requirements.txt requirements-redis.txt ./
 # Pip and its vendored build/download libraries are build-time only.
 RUN pip install --no-cache-dir -r requirements.txt \
+    && if [ "$INSTALL_REDIS" = "true" ]; then \
+         pip install --no-cache-dir -r requirements-redis.txt; \
+       fi \
     && python -m pip uninstall --yes pip \
     && rm -rf /usr/local/lib/python3.13/ensurepip \
         /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.13

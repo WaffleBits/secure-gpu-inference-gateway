@@ -1,6 +1,15 @@
 from __future__ import annotations
 
+import os
+
 from gateway.models import ModelPolicy, Principal
+
+
+def _positive_env_int(name: str, default: int) -> int:
+    value = int(os.getenv(name, str(default)))
+    if value < 1:
+        raise ValueError(f"{name} must be positive")
+    return value
 
 
 PRINCIPALS = {
@@ -45,8 +54,14 @@ MODEL_POLICIES = {
         model_id="benchmark-echo",
         description="Low-risk model used for load and health checks",
         allowed_roles=frozenset({"analyst", "security-engineer", "platform-admin"}),
-        requests_per_minute=120,
-        input_tokens_per_minute=20000,
+        requests_per_minute=_positive_env_int(
+            "BENCHMARK_REQUESTS_PER_MINUTE",
+            120,
+        ),
+        input_tokens_per_minute=_positive_env_int(
+            "BENCHMARK_INPUT_TOKENS_PER_MINUTE",
+            20000,
+        ),
         requires_reason=False,
         sensitivity="low",
     ),
