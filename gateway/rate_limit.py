@@ -7,14 +7,17 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 
-REDIS_FIXED_WINDOW_LUA = """local current = redis.call(\"INCRBY\", KEYS[1], ARGV[1])
-if current == tonumber(ARGV[1]) then
+REDIS_FIXED_WINDOW_LUA = """local cost = tonumber(ARGV[1])
+local limit = tonumber(ARGV[3])
+local current = tonumber(redis.call(\"GET\", KEYS[1]) or \"0\")
+if current + cost > limit then
+  return {0, current, limit}
+end
+current = redis.call(\"INCRBY\", KEYS[1], cost)
+if current == cost then
   redis.call(\"PEXPIRE\", KEYS[1], ARGV[2])
 end
-if current > tonumber(ARGV[3]) then
-  return {0, current, tonumber(ARGV[3])}
-end
-return {1, current, tonumber(ARGV[3])}
+return {1, current, limit}
 """
 
 
