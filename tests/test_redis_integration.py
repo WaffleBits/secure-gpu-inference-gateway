@@ -5,6 +5,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from gateway.rate_limit import (
+    FixedWindowTokenBudgetLimiter,
     RedisFixedWindowRateLimiter,
     RedisFixedWindowTokenBudgetLimiter,
 )
@@ -68,6 +69,49 @@ class RedisAtomicityIntegrationTest(unittest.TestCase):
         self.assertTrue(
             limiters[0].allow("principal-b", "benchmark-echo", cost=30, limit=30)
         )
+
+    def test_denied_work_does_not_consume_budget(self) -> None:
+        limiter = RedisFixedWindowTokenBudgetLimiter(
+            self.clients[0], key_prefix=self.prefix
+        )
+
+        self.assertTrue(limiter.allow("principal", "model", cost=90, limit=100))
+        self.assertFalse(limiter.allow("principal", "model", cost=50, limit=100))
+        self.assertTrue(limiter.allow("principal", "model", cost=10, limit=100))
+        self.assertFalse(limiter.allow("principal", "model", cost=1, limit=100))
+
+    def test_oversized_first_request_leaves_no_key(self) -> None:
+        limiter = RedisFixedWindowTokenBudgetLimiter(
+            self.clients[0], key_prefix=self.prefix
+        )
+
+        self.assertFalse(limiter.allow("principal", "model", cost=101, limit=100))
+        self.assertEqual(
+            list(self.clients[0].scan_iter(match=f"{self.prefix}:*", count=100)), []
+        )
+
+    def test_allowed_work_sets_window_expiry(self) -> None:
+        limiter = RedisFixedWindowTokenBudgetLimiter(
+            self.clients[0], key_prefix=self.prefix
+        )
+
+        self.assertTrue(limiter.allow("principal", "model", cost=1, limit=100))
+        keys = list(self.clients[0].scan_iter(match=f"{self.prefix}:*", count=100))
+        self.assertEqual(len(keys), 1)
+        self.assertGreater(self.clients[0].pttl(keys[0]), 0)
+
+    def test_redis_matches_in_memory_token_budget(self) -> None:
+        redis_limiter = RedisFixedWindowTokenBudgetLimiter(
+            self.clients[0], window_seconds=3600, key_prefix=self.prefix
+        )
+        memory_limiter = FixedWindowTokenBudgetLimiter(window_seconds=3600)
+
+        for cost in (90, 50, 5, 6, 5, 1):
+            self.assertEqual(
+                redis_limiter.allow("principal", "model", cost=cost, limit=100),
+                memory_limiter.allow("principal", "model", cost=cost, limit=100),
+                f"cost={cost}",
+            )
 
     def test_window_expiration_allows_new_work(self) -> None:
         limiter = RedisFixedWindowRateLimiter(
