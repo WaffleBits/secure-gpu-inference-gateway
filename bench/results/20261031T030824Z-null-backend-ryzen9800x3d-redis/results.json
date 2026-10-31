@@ -1,0 +1,369 @@
+{
+  "conditions": [
+    {
+      "concurrency": 1,
+      "direct": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 4186.049888115191,
+          "p50_us": 211.1720000357309,
+          "p95_us": 382.95000001653534,
+          "p99_us": 521.7090000542157
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 4681.740115121244,
+          "p50_us": 195.29899998360634,
+          "p95_us": 329.7939999811206,
+          "p99_us": 457.2609999513588
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 4428.925724914148,
+          "p50_us": 208.6460000327861,
+          "p95_us": 340.4969999110108,
+          "p99_us": 486.76500000510714
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 4271.221017471561,
+          "p50_us": 212.8600000332881,
+          "p95_us": 350.17699997297314,
+          "p99_us": 500.6090000279073
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 4255.583762945442,
+          "p50_us": 215.88799995697627,
+          "p95_us": 341.4469999825087,
+          "p99_us": 499.2409999431402
+        }
+      ],
+      "gateway": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 173.9601110819393,
+          "p50_us": 5660.159000058229,
+          "p95_us": 6631.031999972947,
+          "p99_us": 7066.698000016913
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 172.67757823006372,
+          "p50_us": 5701.138000063111,
+          "p95_us": 6641.822999995384,
+          "p99_us": 7093.653999959315
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 171.80171922974122,
+          "p50_us": 5748.1559999814635,
+          "p95_us": 6680.26000005284,
+          "p99_us": 7207.770000036362
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 170.917980854469,
+          "p50_us": 5771.465999941938,
+          "p95_us": 6655.41699993355,
+          "p99_us": 7080.37299989428
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 174.36727953294618,
+          "p50_us": 5643.363999979556,
+          "p95_us": 6492.748000027859,
+          "p99_us": 6943.612999975812
+        }
+      ],
+      "added": {
+        "p50_us": {
+          "median": 5505.839000079504,
+          "min": 5427.47600002258,
+          "max": 5558.60599990865
+        },
+        "p95_us": {
+          "median": 6305.239999960577,
+          "min": 6151.3010000453505,
+          "max": 6339.763000141829
+        },
+        "p99_us": {
+          "median": 6579.763999866373,
+          "min": 6444.372000032672,
+          "max": 6721.005000031255
+        }
+      }
+    },
+    {
+      "concurrency": 8,
+      "direct": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 16722.821399244902,
+          "p50_us": 405.78899995580286,
+          "p95_us": 948.4409999913623,
+          "p99_us": 1336.6059999952995
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 18800.357462480995,
+          "p50_us": 369.23200002547674,
+          "p95_us": 783.0060000060257,
+          "p99_us": 1012.8930000519176
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 19739.602740655526,
+          "p50_us": 352.91500000766973,
+          "p95_us": 743.0670000303508,
+          "p99_us": 985.181999908491
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 17654.517545643543,
+          "p50_us": 393.2390000045416,
+          "p95_us": 785.436999990452,
+          "p99_us": 1141.1039999984496
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 17577.274479635274,
+          "p50_us": 405.56900000865426,
+          "p95_us": 760.1840000006632,
+          "p99_us": 1166.624999996202
+        }
+      ],
+      "gateway": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 145.55529376462366,
+          "p50_us": 54650.76899997712,
+          "p95_us": 62614.67499996343,
+          "p99_us": 67297.73999995814
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 143.80509195092785,
+          "p50_us": 55422.303000000284,
+          "p95_us": 63617.53900000622,
+          "p99_us": 68521.16599998226
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 146.70016770611227,
+          "p50_us": 54189.13799996972,
+          "p95_us": 62446.85199999367,
+          "p99_us": 67892.28599996022
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 147.6054378797908,
+          "p50_us": 53914.19200009295,
+          "p95_us": 62140.37600000211,
+          "p99_us": 67053.66000005597
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 146.45949429376822,
+          "p50_us": 54038.65899995708,
+          "p95_us": 63645.32899999631,
+          "p99_us": 68797.29100000986
+        }
+      ],
+      "added": {
+        "p50_us": {
+          "median": 53836.22299996205,
+          "min": 53520.95300008841,
+          "max": 55053.07099997481
+        },
+        "p95_us": {
+          "median": 61703.78499996332,
+          "min": 61354.939000011655,
+          "max": 62885.144999995646
+        },
+        "p99_us": {
+          "median": 66907.10400005174,
+          "min": 65912.55600005752,
+          "max": 67630.66600001366
+        }
+      }
+    },
+    {
+      "concurrency": 32,
+      "direct": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 16078.546245250835,
+          "p50_us": 1823.2899999475194,
+          "p95_us": 3568.948000065575,
+          "p99_us": 4619.291999915731
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 18744.247999471147,
+          "p50_us": 1656.7820000545908,
+          "p95_us": 2440.9589999550008,
+          "p99_us": 2814.7589999889533
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 18064.85716556577,
+          "p50_us": 1676.578999990852,
+          "p95_us": 2734.1109999952096,
+          "p99_us": 3689.6530000376515
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 18765.54727938107,
+          "p50_us": 1646.6229999423376,
+          "p95_us": 2257.061999898724,
+          "p99_us": 2750.256000126683
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 18080.00670551735,
+          "p50_us": 1698.0079999484587,
+          "p95_us": 2663.350999910108,
+          "p99_us": 3253.730000096766
+        }
+      ],
+      "gateway": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 113.16394364272442,
+          "p50_us": 260606.14599998645,
+          "p95_us": 469962.98399994883,
+          "p99_us": 630302.1290000288
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 110.34693011378288,
+          "p50_us": 270885.12800003175,
+          "p95_us": 484418.99800002377,
+          "p99_us": 644102.6759999886
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 110.07145425602027,
+          "p50_us": 270992.9119998833,
+          "p95_us": 485951.6489999578,
+          "p99_us": 665708.7459999502
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 111.033677233781,
+          "p50_us": 267794.99200006283,
+          "p95_us": 476484.85200011235,
+          "p99_us": 639135.5040000235
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 111.06476287236529,
+          "p50_us": 268243.57899999997,
+          "p95_us": 481438.548999904,
+          "p99_us": 635364.6799998387
+        }
+      ],
+      "added": {
+        "p50_us": {
+          "median": 266545.5710000515,
+          "min": 258782.8560000389,
+          "max": 269316.3329998925
+        },
+        "p95_us": {
+          "median": 478775.1979999939,
+          "min": 466394.03599988326,
+          "max": 483217.5379999626
+        },
+        "p99_us": {
+          "median": 636385.2479998968,
+          "min": 625682.8370001131,
+          "max": 662019.0929999126
+        }
+      }
+    }
+  ],
+  "control_path_check": {
+    "gateway_requests": 82500,
+    "audit_events": 82500,
+    "trace_spans": 82500
+  },
+  "configuration": {
+    "limiter": "redis",
+    "auth": "HS256 JWT",
+    "uvicorn_workers": 1,
+    "tls": false,
+    "pinned": true,
+    "requests_per_run": 5000,
+    "warmup_per_run": 500,
+    "repetitions": 5,
+    "prompt_words": 64,
+    "stream_tokens": 16
+  },
+  "environment": {
+    "commit": "bb6ed30804523f8c7c691a98926bf035c4cfed37",
+    "cpu": "AMD Ryzen 7 9800X3D 8-Core Processor",
+    "kernel": "6.6.87.2-microsoft-standard-WSL2",
+    "python": "3.12.3"
+  }
+}

@@ -308,7 +308,7 @@ def build_release_gates(
             "rollback_trigger_count": sum(1 for phase in phases if phase.rollback_trigger),
         },
         {
-            "name": "public_safe_artifact",
+            "name": "no_sensitive_data",
             "status": "pass",
             "omitted_categories": [
                 "request payloads",
@@ -332,7 +332,7 @@ def write_deployment_readiness_report(output_path: Path) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Write public-safe inference deployment readiness evidence."
+        description="Write inference deployment readiness evidence."
     )
     parser.add_argument(
         "--output",

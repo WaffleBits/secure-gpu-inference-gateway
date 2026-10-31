@@ -161,7 +161,7 @@ def build_release_gates(
             "script_sha256": stable_sha256(REDIS_FIXED_WINDOW_LUA),
         },
         {
-            "name": "public_safe_artifact",
+            "name": "no_sensitive_data",
             "status": "pass",
             "omitted_categories": [
                 "request payloads",
@@ -220,7 +220,7 @@ def write_distributed_limiter_report(output_path: Path) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Write public-safe distributed limiter readiness evidence."
+        description="Write distributed limiter readiness evidence."
     )
     parser.add_argument(
         "--output",

@@ -1,6 +1,6 @@
 # Secure AI Platform Roadmap
 
-This roadmap keeps the project pointed at platform security, security software engineering, and AI infrastructure security. It is intentionally public-safe: no production endpoints, customer prompts, credentials, model weights, classified data, or real operational logs.
+This roadmap keeps the project pointed at platform security, security software engineering, and AI infrastructure security.
 
 ## Positioning
 

@@ -88,7 +88,7 @@ class CompletionAdmission:
 app = FastAPI(
     title="Secure GPU Inference Gateway",
     version="0.1.0",
-    description="Public-safe AI inference security gateway demo.",
+    description="AI inference security gateway.",
 )
 
 rate_limiter, token_budget_limiter = build_limiters_from_env()

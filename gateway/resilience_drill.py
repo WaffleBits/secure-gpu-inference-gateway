@@ -348,7 +348,7 @@ def build_release_gates(
             "missing_mitigations": missing_mitigations,
         },
         {
-            "name": "public_safe_artifact",
+            "name": "no_sensitive_data",
             "status": "pass",
             "omitted_categories": [
                 "request payloads",
@@ -372,7 +372,7 @@ def write_resilience_drill_report(output_path: Path) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Write public-safe inference resilience drill evidence."
+        description="Write inference resilience drill evidence."
     )
     parser.add_argument(
         "--output",

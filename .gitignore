@@ -15,3 +15,6 @@ dump.rdb
 .DS_Store
 Thumbs.db
 
+
+# Working notes live outside this repository
+docs/plans/

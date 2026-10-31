@@ -180,7 +180,7 @@ def build_release_gates(
             "threshold_ms": thresholds.max_allowed_p95_latency_ms,
         },
         {
-            "name": "public_safe_artifact",
+            "name": "no_sensitive_data",
             "status": "pass",
             "omitted_categories": [
                 "payload contents",
@@ -256,7 +256,7 @@ def write_workload_report(output_path: Path) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Write a public-safe synthetic gateway workload-readiness artifact."
+        description="Write a synthetic gateway workload-readiness artifact."
     )
     parser.add_argument(
         "--output",

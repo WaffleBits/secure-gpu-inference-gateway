@@ -43,7 +43,7 @@
       "status": "pass"
     },
     {
-      "name": "public_safe_artifact",
+      "name": "no_sensitive_data",
       "omitted_categories": [
         "request payloads",
         "model responses",

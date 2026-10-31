@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import urllib.request
 from collections.abc import Mapping
 from pathlib import Path
@@ -86,6 +87,7 @@ class JsonlTraceExporter:
     ) -> None:
         self.path = Path(path)
         self.service_name = service_name
+        self._lock = threading.Lock()
 
     @classmethod
     def from_env(cls) -> JsonlTraceExporter | None:
@@ -131,8 +133,10 @@ class JsonlTraceExporter:
             route=route,
         )
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record, sort_keys=True) + "\n")
+        line = json.dumps(record, sort_keys=True) + "\n"
+        with self._lock:
+            with self.path.open("a", encoding="utf-8") as handle:
+                handle.write(line)
 
 
 class OtlpHttpTraceExporter:
