@@ -20,7 +20,8 @@ Status: partially implemented.
 - Keep OIDC/JWT validation issuer-bound, audience-bound, expiry-aware, and testable.
 - Add JWKS-backed key rotation example for asymmetric token validation.
 - Add mTLS notes for gateway-to-model-backend calls.
-- Replace local demo principals with a disabled-by-default review mode.
+- Implemented: local demo-principal authentication is disabled by default and
+  requires `ALLOW_DEMO_PRINCIPALS=true` for explicit review-only use.
 - Add negative authorization tests for missing roles, wrong audience, expired tokens, and missing reason-for-access.
 
 ## Milestone 2: Policy-As-Code

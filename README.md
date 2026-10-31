@@ -34,9 +34,9 @@ See `ARCHITECTURE.md` and `THREAT_MODEL.md` for the full picture.
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
+. .venv/bin/activate
 pip install -r requirements.txt
-uvicorn gateway.app:app --reload
+ALLOW_DEMO_PRINCIPALS=true uvicorn gateway.app:app --reload
 ```
 
 Health and metrics:
@@ -55,13 +55,16 @@ curl -X POST http://localhost:8000/v1/infer/mission-summarizer \
   -d "{\"input\":\"Summarize synthetic maintenance delays\", \"reason\":\"readiness review\"}"
 ```
 
-The demo header is enabled by default for convenience. To exercise the JWT path:
+Demo-principal authentication is disabled unless explicitly enabled. The command
+above opts in only for local review with the mock backend. Do not enable the demo
+header in a shared or production deployment. To exercise the JWT path, leave the
+setting unset or set it to `false`:
 
 ```bash
-set OIDC_ISSUER=https://issuer.example.com
-set OIDC_AUDIENCE=secure-gpu-inference-gateway
-set OIDC_JWT_HS256_SECRET=local-review-secret
-set ALLOW_DEMO_PRINCIPALS=false
+export OIDC_ISSUER=https://issuer.example.com
+export OIDC_AUDIENCE=secure-gpu-inference-gateway
+export OIDC_JWT_HS256_SECRET=local-review-secret
+export ALLOW_DEMO_PRINCIPALS=false
 ```
 
 Then send `Authorization: Bearer <token>` with `sub`, `iss`, `aud`, `exp`, and a `roles` or `scope` claim matching the model policy. HS256 is for local testing. Production OIDC should use JWKS-backed signing and key rotation.
