@@ -333,6 +333,25 @@ The Compose file requests one NVIDIA GPU and uses host IPC for vLLM. GPU
 passthrough still requires a working Docker Engine and NVIDIA Container Toolkit;
 Compose cannot install or validate host drivers.
 
+## Null-backend overhead
+
+GPU time hides the gateway in the comparison above. `bench/overhead.py` removes
+it: a local backend streams a fixed reply immediately, and the same closed-loop
+client alternates between that backend and the gateway in front of it. No GPU is
+needed.
+
+```bash
+python -m bench.overhead --pin --label my-host
+python -m bench.overhead --pin --redis-url redis://127.0.0.1:6379/0 --label my-host-redis
+```
+
+The gateway runs its normal path: a verified HS256 JWT, role policy, both
+limiters, audit log, Prometheus metrics, trace export and streaming proxy. The
+run fails unless the audit log and trace file each hold one line per gateway
+request. `--pin` keeps the client, backend and gateway on separate CPUs on Linux.
+Rows above concurrency 1 include queueing on the single worker, so read them as
+saturation behavior.
+
 ## Known limitations
 
 - The gateway's policy budget estimates input tokens as characters divided by

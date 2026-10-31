@@ -12,7 +12,7 @@ from gateway.workload_replay import (
 
 
 class WorkloadReplayTest(unittest.TestCase):
-    def test_builds_public_safe_readiness_report_with_guardrail_coverage(self) -> None:
+    def test_builds_readiness_report_with_guardrail_coverage(self) -> None:
         report = build_workload_report()
 
         self.assertEqual(report["schema_version"], 1)

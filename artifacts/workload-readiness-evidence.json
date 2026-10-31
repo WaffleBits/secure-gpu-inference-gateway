@@ -97,7 +97,7 @@
       "threshold_ms": 120.0
     },
     {
-      "name": "public_safe_artifact",
+      "name": "no_sensitive_data",
       "omitted_categories": [
         "payload contents",
         "model responses",

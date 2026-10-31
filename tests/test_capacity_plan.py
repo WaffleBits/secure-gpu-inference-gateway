@@ -75,7 +75,7 @@ class CapacityPlanTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "units_per_second"):
             cost_per_units(1, 0, 1000)
 
-    def test_written_artifact_is_public_safe_aggregate_data(self) -> None:
+    def test_written_artifact_is_aggregate_data(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "capacity-plan-evidence.json"
 

@@ -2,6 +2,8 @@
 
 ## Measured runs
 
+- [`20261031T025753Z-null-backend-ryzen9800x3d-memory`](20261031T025753Z-null-backend-ryzen9800x3d-memory/report.md): gateway cost against a null backend with the in-memory limiter, 82,500 gateway requests.
+- [`20261031T030824Z-null-backend-ryzen9800x3d-redis`](20261031T030824Z-null-backend-ryzen9800x3d-redis/report.md): the same run with the Redis limiter.
 - [`20260803T212059Z-rtx5070ti-qwen25-3b-vllm026`](20260803T212059Z-rtx5070ti-qwen25-3b-vllm026/report.md): RTX 5070 Ti, Qwen2.5-3B-Instruct, 108 conditions, 3,000 measured requests, and zero failures. See its [`VALIDATION.md`](20260803T212059Z-rtx5070ti-qwen25-3b-vllm026/VALIDATION.md) for the conservative headline and runtime-drift limitation.
 
 ## Result layout

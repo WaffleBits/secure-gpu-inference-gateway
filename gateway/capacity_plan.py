@@ -189,7 +189,7 @@ def write_capacity_report(output_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Write a public-safe synthetic gateway capacity plan artifact."
+        description="Write a synthetic gateway capacity plan artifact."
     )
     parser.add_argument(
         "--output",

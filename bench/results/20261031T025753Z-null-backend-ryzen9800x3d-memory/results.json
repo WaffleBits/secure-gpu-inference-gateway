@@ -1,0 +1,369 @@
+{
+  "conditions": [
+    {
+      "concurrency": 1,
+      "direct": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 4592.766288564147,
+          "p50_us": 206.17500000064126,
+          "p95_us": 279.499999999544,
+          "p99_us": 392.8379999997844
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 5394.970308025623,
+          "p50_us": 178.9829999978565,
+          "p95_us": 223.30500000578013,
+          "p99_us": 301.88700000621793
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 5301.271340396313,
+          "p50_us": 177.99300000831408,
+          "p95_us": 257.148999992296,
+          "p99_us": 372.86200000608005
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 5114.443838422614,
+          "p50_us": 180.917999998087,
+          "p95_us": 286.08899999937876,
+          "p99_us": 366.3079999967067
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 5079.040428390768,
+          "p50_us": 182.9979999996567,
+          "p95_us": 285.41900000789155,
+          "p99_us": 373.88900000223657
+        }
+      ],
+      "gateway": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 200.93984033028278,
+          "p50_us": 4909.6499999983225,
+          "p95_us": 5508.083999998803,
+          "p99_us": 5815.16099999746
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 205.2707604711597,
+          "p50_us": 4839.9180000018305,
+          "p95_us": 5532.380999994757,
+          "p99_us": 5810.332999999446
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 204.80549616213014,
+          "p50_us": 4841.240000004632,
+          "p95_us": 5601.768000005336,
+          "p99_us": 6010.478000007424
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 203.61396909696057,
+          "p50_us": 4872.419999998101,
+          "p95_us": 5632.981999994513,
+          "p99_us": 5896.59099999551
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 207.69439758874532,
+          "p50_us": 4803.882999993903,
+          "p95_us": 5498.652999989417,
+          "p99_us": 5886.41000001644
+        }
+      ],
+      "added": {
+        "p50_us": {
+          "median": 4663.246999996318,
+          "min": 4620.884999994246,
+          "max": 4703.474999997681
+        },
+        "p95_us": {
+          "median": 5309.075999988977,
+          "min": 5213.233999981526,
+          "max": 5346.892999995134
+        },
+        "p99_us": {
+          "median": 5512.521000014203,
+          "min": 5422.322999997676,
+          "max": 5637.616000001344
+        }
+      }
+    },
+    {
+      "concurrency": 8,
+      "direct": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 19143.598193731807,
+          "p50_us": 370.9399999820562,
+          "p95_us": 650.2539999928558,
+          "p99_us": 923.5759999910442
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 19157.695370167516,
+          "p50_us": 377.85800000733616,
+          "p95_us": 613.8020000037159,
+          "p99_us": 892.0589999945605
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 19316.324277027707,
+          "p50_us": 373.91699999034245,
+          "p95_us": 697.5240000031135,
+          "p99_us": 1002.0699999984117
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 14653.906541128157,
+          "p50_us": 434.01400000675494,
+          "p95_us": 1134.5820000201456,
+          "p99_us": 1720.310999985486
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 16483.809025839386,
+          "p50_us": 403.4750000414533,
+          "p95_us": 955.4370000159906,
+          "p99_us": 1377.7099999856546
+        }
+      ],
+      "gateway": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 181.51651877636002,
+          "p50_us": 43884.97900001198,
+          "p95_us": 50313.36400000441,
+          "p99_us": 54866.18099999418
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 183.99662676157965,
+          "p50_us": 43023.250999993936,
+          "p95_us": 50147.46399999126,
+          "p99_us": 54056.08300000608
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 172.19212075146422,
+          "p50_us": 45390.52600000559,
+          "p95_us": 56653.43000001144,
+          "p99_us": 62928.892000002175
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 168.14005260331905,
+          "p50_us": 47279.091999996584,
+          "p95_us": 54988.568999988274,
+          "p99_us": 58904.594000011915
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 167.2625161980373,
+          "p50_us": 47471.276999999645,
+          "p95_us": 55735.796000021764,
+          "p99_us": 59714.412000005264
+        }
+      ],
+      "added": {
+        "p50_us": {
+          "median": 45016.60900001525,
+          "min": 42645.3929999866,
+          "max": 47067.80199995819
+        },
+        "p95_us": {
+          "median": 53853.986999968125,
+          "min": 49533.66199998755,
+          "max": 55955.90600000833
+        },
+        "p99_us": {
+          "median": 57184.28300002643,
+          "min": 53164.02400001152,
+          "max": 61926.82200000376
+        }
+      }
+    },
+    {
+      "concurrency": 32,
+      "direct": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 16384.10787149574,
+          "p50_us": 1728.9099999970858,
+          "p95_us": 3605.8570000250256,
+          "p99_us": 4089.066999995339
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 18484.33188362081,
+          "p50_us": 1660.7570000246596,
+          "p95_us": 2233.369999999013,
+          "p99_us": 2378.7559999846053
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 17977.474052427577,
+          "p50_us": 1692.843000000721,
+          "p95_us": 2432.8000000082284,
+          "p99_us": 3121.823000014956
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 15953.430786887731,
+          "p50_us": 1726.6960000483778,
+          "p95_us": 3418.688000010661,
+          "p99_us": 8423.741000001428
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 18863.567400148895,
+          "p50_us": 1617.6589999759017,
+          "p95_us": 2575.8809999842924,
+          "p99_us": 2986.867999993592
+        }
+      ],
+      "gateway": [
+        {
+          "repetition": 0,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 122.08203551687603,
+          "p50_us": 239027.38399999635,
+          "p95_us": 457094.5070000221,
+          "p99_us": 625413.6249999646
+        },
+        {
+          "repetition": 1,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 129.61249405911803,
+          "p50_us": 221897.1979999651,
+          "p95_us": 421796.31699997344,
+          "p99_us": 568650.6729999792
+        },
+        {
+          "repetition": 2,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 122.95463705583396,
+          "p50_us": 228817.46199999496,
+          "p95_us": 444203.04200002644,
+          "p99_us": 612951.0080000387
+        },
+        {
+          "repetition": 3,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 128.53706220250209,
+          "p50_us": 216954.64199996195,
+          "p95_us": 430845.4600000004,
+          "p99_us": 570315.751999999
+        },
+        {
+          "repetition": 4,
+          "requests": 5000,
+          "failures": 0,
+          "requests_per_second": 128.19631128358506,
+          "p50_us": 228981.54400002112,
+          "p95_us": 420192.6519999688,
+          "p99_us": 568220.3729999742
+        }
+      ],
+      "added": {
+        "p50_us": {
+          "median": 227124.61899999424,
+          "min": 215227.9459999136,
+          "max": 237298.47399999926
+        },
+        "p95_us": {
+          "median": 427426.77199998975,
+          "min": 417616.7709999845,
+          "max": 453488.64999999705
+        },
+        "p99_us": {
+          "median": 566271.9169999947,
+          "min": 561892.0109999976,
+          "max": 621324.5579999692
+        }
+      }
+    }
+  ],
+  "control_path_check": {
+    "gateway_requests": 82500,
+    "audit_events": 82500,
+    "trace_spans": 82500
+  },
+  "configuration": {
+    "limiter": "memory",
+    "auth": "HS256 JWT",
+    "uvicorn_workers": 1,
+    "tls": false,
+    "pinned": true,
+    "requests_per_run": 5000,
+    "warmup_per_run": 500,
+    "repetitions": 5,
+    "prompt_words": 64,
+    "stream_tokens": 16
+  },
+  "environment": {
+    "commit": "bb6ed30804523f8c7c691a98926bf035c4cfed37",
+    "cpu": "AMD Ryzen 7 9800X3D 8-Core Processor",
+    "kernel": "6.6.87.2-microsoft-standard-WSL2",
+    "python": "3.12.3"
+  }
+}

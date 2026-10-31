@@ -15,7 +15,7 @@ from gateway.registry import MODEL_POLICIES
 
 
 class DeploymentReadinessTest(unittest.TestCase):
-    def test_builds_public_safe_deployment_readiness_report(self) -> None:
+    def test_builds_deployment_readiness_report(self) -> None:
         report = build_deployment_readiness_report()
 
         self.assertEqual(report["schema_version"], 1)

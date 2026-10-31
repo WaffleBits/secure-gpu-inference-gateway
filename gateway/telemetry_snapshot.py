@@ -196,7 +196,7 @@ def build_snapshot(metrics_text: str, probe_report: dict[str, Any] | None = None
         )
         if probe_report.get("status") != "pass":
             snapshot["status"] = "hold"
-    assert_public_safe(snapshot)
+    assert_no_sensitive_data(snapshot)
     return snapshot
 
 
@@ -256,7 +256,7 @@ def aggregate_probe(report: dict[str, Any]) -> dict[str, Any]:
     return aggregate
 
 
-def assert_public_safe(value: Any) -> None:
+def assert_no_sensitive_data(value: Any) -> None:
     def walk(current: Any, path: tuple[str, ...] = ()) -> None:
         if isinstance(current, dict):
             for key, child in current.items():

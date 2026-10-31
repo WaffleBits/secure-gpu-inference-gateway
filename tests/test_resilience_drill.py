@@ -13,7 +13,7 @@ from gateway.resilience_drill import (
 
 
 class ResilienceDrillTest(unittest.TestCase):
-    def test_builds_public_safe_resilience_drill_report(self) -> None:
+    def test_builds_resilience_drill_report(self) -> None:
         report = build_resilience_drill_report()
 
         self.assertEqual(report["schema_version"], 1)

@@ -8,6 +8,25 @@ survives afterward, and what the complete control path costs.
 The default quick start remains GPU-free. The real benchmark is opt-in and never
 substitutes synthetic values for measured vLLM/GPU results.
 
+## Measured cost
+
+| Limiter | Added p50 | Added p95 | Added p99 | Requests/s | Run |
+|---|---:|---:|---:|---:|---|
+| In-memory | 4.7 ms | 5.3 ms | 5.5 ms | 205 | [report](bench/results/20261031T025753Z-null-backend-ryzen9800x3d-memory/report.md) |
+| Redis | 5.5 ms | 6.3 ms | 6.6 ms | 173 | [report](bench/results/20261031T030824Z-null-backend-ryzen9800x3d-redis/report.md) |
+
+The backend here does no work, so the difference from a direct call is the
+gateway itself: JWT verification, policy, limiters, audit, metrics, trace export
+and streaming proxying. One connection, one uvicorn worker, loopback, Ryzen 7
+9800X3D under WSL, five paired repetitions of 5,000 requests. The run fails
+unless every gateway request leaves an audit event and a trace span. The
+requests per second are this single worker's ceiling, not a capacity figure.
+
+Against real vLLM on an RTX 5070 Ti, gateway throughput tracked direct within
+run-to-run variance across 3,000 requests with no failures, so no overhead or
+speedup is claimed for that path. See the
+[report](bench/results/20260803T212059Z-rtx5070ti-qwen25-3b-vllm026/report.md).
+
 ## Features
 
 - JWT authentication with issuer, audience, expiry, and role checks.
