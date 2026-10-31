@@ -1,250 +1,80 @@
 # Secure GPU Inference Gateway
 
-An inference gateway with a deterministic mock backend for review and a real,
-streaming OpenAI-compatible vLLM path for measurement. It shows who can call
-which model, why the call is allowed, how abuse is throttled, what evidence
-survives afterward, and what the complete control path costs.
+A Python service that sits in front of an LLM server and decides who can call which
+model, enforces rate and token limits, and records every decision. It proxies
+streaming traffic to vLLM, or to a mock backend when no GPU is available.
 
-The default quick start remains GPU-free. The real benchmark is opt-in and never
-substitutes synthetic values for measured vLLM/GPU results.
+## Result
 
-## Measured cost
+Against a backend that does no work, the full control path adds **4.7 ms at p50**.
 
-| Limiter | Added p50 | Added p95 | Added p99 | Requests/s | Run |
-|---|---:|---:|---:|---:|---|
-| In-memory | 4.7 ms | 5.3 ms | 5.5 ms | 205 | [report](bench/results/20261031T025753Z-null-backend-ryzen9800x3d-memory/report.md) |
-| Redis | 5.5 ms | 6.3 ms | 6.6 ms | 173 | [report](bench/results/20261031T030824Z-null-backend-ryzen9800x3d-redis/report.md) |
+| Limiter | Added p50 | Added p95 | Added p99 | Requests/s |
+|---|---:|---:|---:|---:|
+| [In-memory](bench/results/20261031T025753Z-null-backend-ryzen9800x3d-memory/report.md) | 4.7 ms | 5.3 ms | 5.5 ms | 205 |
+| [Redis](bench/results/20261031T030824Z-null-backend-ryzen9800x3d-redis/report.md) | 5.5 ms | 6.3 ms | 6.6 ms | 173 |
 
-The backend here does no work, so the difference from a direct call is the
-gateway itself: JWT verification, policy, limiters, audit, metrics, trace export
-and streaming proxying. One connection, one uvicorn worker, loopback, Ryzen 7
-9800X3D under WSL, five paired repetitions of 5,000 requests. The run fails
-unless every gateway request leaves an audit event and a trace span. The
-requests per second are this single worker's ceiling, not a capacity figure.
+One connection, one uvicorn worker, loopback, Ryzen 7 9800X3D under WSL, five paired
+repetitions of 5,000 requests. The run fails unless every gateway request leaves an
+audit event and a trace span. Requests per second is this single worker's ceiling,
+not a capacity figure.
 
-Against real vLLM on an RTX 5070 Ti, gateway throughput tracked direct within
-run-to-run variance across 3,000 requests with no failures, so no overhead or
-speedup is claimed for that path. See the
+Against real vLLM on an RTX 5070 Ti, throughput tracked direct within run-to-run
+variance across 3,000 requests with no failures, so no overhead or speedup is claimed
+for that path. See the
 [report](bench/results/20260803T212059Z-rtx5070ti-qwen25-3b-vllm026/report.md).
 
-## Features
+## How it works
 
-- JWT authentication with issuer, audience, expiry, and role checks.
-- Role-based model authorization with reason-for-access enforcement.
-- Fixed-window request limits per principal and model.
-- Token-budget limits based on estimated input tokens.
-- Optional Redis-backed request and token limits using an atomic Lua script;
-  memory-backed limits remain the default for local review.
-- Structured JSONL audit logging with trace context.
-- Prometheus `/metrics` for auth, policy, limiter, and latency.
-- Sanitized trace export in OpenTelemetry span form.
-- OTLP/HTTP collector payload generation.
-- Mock GPU backend plus pooled non-streaming and streaming OpenAI-compatible adapters.
-- A full-policy `/v1/completions` proxy suitable for direct-vLLM versus gateway comparison.
-- Reproducible official-vLLM benchmark orchestration with TTFT, TPOT, ITL,
-  end-to-end percentiles, raw samples, resource capture, paired analysis, and plots.
-- Aggregate telemetry snapshot that correlates gateway counters and latency histograms with probe evidence.
-- Unit tests plus a threat model and architecture notes.
-- CI supply-chain evidence: pinned dependency audit, SPDX image SBOM, and a
-  high-severity container vulnerability gate.
-- Deployment posture checks for non-root execution, dropped capabilities,
-  read-only root filesystem, health probes, resource limits, and metrics.
+```mermaid
+flowchart LR
+    C[Caller] --> I[Identity<br/>JWT checks]
+    I --> P[Policy<br/>role and reason]
+    P --> R[Rate limit]
+    R --> B[Token budget]
+    B --> S[Backend<br/>vLLM or mock]
+    I & P & R & B & S --> A[Audit, metrics, traces]
+```
 
-## Architecture
+A denial at any step stops the request and is still recorded.
 
-The service keeps concerns separate. `gateway/app.py` orchestrates each request. `gateway/identity.py` verifies bearer JWTs. `gateway/policy.py` decides role and reason-for-access. `gateway/rate_limit.py` enforces memory-backed limits by default or Redis-backed atomic limits when explicitly enabled. `gateway/audit.py` writes evidence. `gateway/metrics.py` exposes Prometheus counters. `gateway/trace_exporter.py` and `gateway/otlp_export.py` produce sanitized spans and collector payloads. The mock backend lives in `gateway/mock_inference.py`.
-
-See `ARCHITECTURE.md` and `THREAT_MODEL.md` for the full picture.
-
-## Quick start
+## Run it
 
 ```bash
-python -m venv .venv
-. .venv/bin/activate
 pip install -r requirements.txt
 ALLOW_DEMO_PRINCIPALS=true uvicorn gateway.app:app --reload
+curl -X POST http://localhost:8000/v1/infer/mission-summarizer -H "Content-Type: application/json" -H "X-Principal-Id: analyst-1" -d "{\"input\":\"Summarize synthetic maintenance delays\", \"reason\":\"readiness review\"}"
 ```
 
-Health and metrics:
+The demo header is off unless you opt in, as above. Everything else, including JWT
+setup, Redis mode, the vLLM path, Grafana and Kubernetes, is in the
+[reference](docs/REFERENCE.md).
 
-```bash
-curl http://localhost:8000/health
-curl http://localhost:8000/metrics
-```
+## Design decisions
 
-Inference request:
+1. **Fail closed.** Demo identities are off by default, an unknown caller is denied,
+   and a gateway configured for Redis refuses to start if Redis is unreachable. A
+   Kubernetes smoke test in CI confirms that a demo request is denied in the deployed
+   manifest.
+2. **Check, then count, atomically.** The Redis limiter is one Lua script, so replicas
+   cannot race between reading and incrementing. A denied request spends nothing, so
+   it cannot block later requests that fit. CI runs this on real Redis.
+3. **Record decisions, not content.** Audit events and traces hold who, which model and
+   why, never the prompt, output or access reason. Principal IDs are hashed in Redis keys.
 
-```bash
-curl -X POST http://localhost:8000/v1/infer/mission-summarizer \
-  -H "Content-Type: application/json" \
-  -H "X-Principal-Id: analyst-1" \
-  -d "{\"input\":\"Summarize synthetic maintenance delays\", \"reason\":\"readiness review\"}"
-```
+## Limitations
 
-Demo-principal authentication is disabled unless explicitly enabled. The command
-above opts in only for local review with the mock backend. Do not enable the demo
-header in a shared or production deployment. To exercise the JWT path, leave the
-setting unset or set it to `false`:
+- HS256 JWTs are for local testing. Production OIDC needs JWKS-backed signing and key
+  rotation.
+- Token budgets use estimated input tokens, and do not count output.
+- One Python worker tops out near 200 requests per second, and I have not yet profiled
+  where the 4.7 ms goes.
+- Measured on one workstation. Capacity, workload and resilience artifacts are
+  synthetic. They exercise the planning logic, not a real fleet.
 
-```bash
-export OIDC_ISSUER=https://issuer.example.com
-export OIDC_AUDIENCE=secure-gpu-inference-gateway
-export OIDC_JWT_HS256_SECRET=local-review-secret
-export ALLOW_DEMO_PRINCIPALS=false
-```
+## More
 
-Then send `Authorization: Bearer <token>` with `sub`, `iss`, `aud`, `exp`, and a `roles` or `scope` claim matching the model policy. HS256 is for local testing. Production OIDC should use JWKS-backed signing and key rotation.
-
-Local dashboard stack:
-
-```bash
-docker compose up --build
-```
-
-Prometheus runs at `http://localhost:9090`, Grafana at `http://localhost:3000`. The dashboard is provisioned from `deploy/grafana/dashboards/security-gateway.json`, and the collector receives spans on `http://localhost:4318/v1/traces`.
-
-Optional Redis limiter mode:
-
-```powershell
-pip install -r requirements-redis.txt
-$env:RATE_LIMIT_BACKEND = "redis"
-$env:REDIS_URL = "redis://localhost:6379/0"
-$env:REDIS_KEY_PREFIX = "sgig"
-uvicorn gateway.app:app
-```
-
-Redis mode hashes principal identifiers before constructing keys and evaluates
-one atomic fixed-window Lua script per request-count or input-token decision.
-The application fails closed at startup if the explicitly selected Redis
-backend is unavailable. The checked-in demo and tests remain dependency-free
-and use the memory backend unless `RATE_LIMIT_BACKEND=redis` is set.
-
-## Evidence artifacts
-
-The repo commits real output artifacts so a reviewer can inspect them without running anything:
-
-- [Sanitized trace evidence](artifacts/sanitized-trace-evidence.jsonl)
-- [OTLP collector payload](artifacts/otlp-collector-payload.json)
-- [Workload-readiness evidence](artifacts/workload-readiness-evidence.json)
-- [Capacity plan evidence](artifacts/capacity-plan-evidence.json)
-- [Distributed-limiter evidence](artifacts/distributed-limiter-evidence.json)
-- [Deployment-readiness evidence](artifacts/deployment-readiness-evidence.json)
-- [Resilience-drill evidence](artifacts/resilience-drill-evidence.json)
-- [Bounded backend-probe evidence](artifacts/backend-probe-evidence.json)
-- [Telemetry-correlation evidence](artifacts/telemetry-correlation-evidence.json)
-- [Grafana dashboard](deploy/grafana/dashboards/security-gateway.json)
-
-The CI workflow also publishes a dependency-audit report and SPDX SBOM for
-review. The container scan fails on unresolved high or critical vulnerabilities;
-the checked-in posture tests keep the Docker and Kubernetes hardening controls
-from silently drifting.
-
-The CI job also builds this image, loads it into a disposable Kind cluster, and
-applies `deploy/kubernetes/gateway.yaml`. `scripts/kubernetes_smoke.py` checks
-the two ready replicas, effective Pod security/resource settings, disabled
-service-account token mounting, and internal-only Service. It then reaches the
-Service health and metrics endpoints and verifies that a demo-principal
-inference request is denied. The smoke test refuses non-Kind contexts. This is
-local cluster validation, not managed-cloud or production operation.
-
-To reproduce it locally:
-
-```bash
-kind create cluster --name gateway-smoke
-docker build --tag secure-gpu-inference-gateway:0.1.0 .
-kind load docker-image secure-gpu-inference-gateway:0.1.0 --name gateway-smoke
-kubectl apply --filename deploy/kubernetes/gateway.yaml
-kubectl rollout status deployment/secure-gpu-inference-gateway \
-  --namespace secure-gpu-inference --timeout=180s
-python scripts/kubernetes_smoke.py
-kind delete cluster --name gateway-smoke
-```
-
-The sanitized trace omits prompt text, model output, access reason, and principal ID. One span from `artifacts/sanitized-trace-evidence.jsonl`:
-
-```json
-{
-  "http.route": "/v1/infer/{model_id}",
-  "ai.gateway.model_id": "mission-summarizer",
-  "ai.gateway.outcome": "allowed",
-  "ai.gateway.auth_method": "demo-header",
-  "ai.gateway.estimated_input_tokens": 10,
-  "ai.gateway.token_budget_limit": 8000,
-  "ai.gateway.latency_ms": 7.25,
-  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
-}
-```
-
-The checked backend-probe artifact records a four-request local endpoint
-sample with response-shape validation, 100% success, and aggregate latency
-percentiles. It intentionally excludes request bodies, decoded output, API
-keys, endpoint URLs, and principal identities. This is endpoint-readiness
-evidence, not a claim about production capacity or a live GPU fleet.
-
-The telemetry-correlation artifact turns a safe `/metrics` scrape into an
-aggregate review snapshot: request outcomes, estimated input-token totals,
-histogram-based latency upper bounds, and the bounded probe result are shown
-together. The checked fixture is local review evidence; it does not claim live
-fleet capacity, GPU utilization, or customer traffic.
-
-Regenerate any artifact from its module, for example `python -m gateway.workload_replay --output artifacts/workload-readiness-evidence.json`. The capacity, workload, limiter, deployment, and resilience artifacts are synthetic. They exercise the planning and gate logic, not a real fleet.
-
-## Optional model-serving adapter
-
-The mock backend is the default for `POST /v1/infer/{model_id}`. To route an
-allowed request to a vLLM- or SGLang-style OpenAI-compatible endpoint, set
-`INFERENCE_BACKEND_COMPLETIONS_URL` to the backend base URL, its `/v1` URL, or
-the full `/v1/completions` URL. The bounded inference route validates a
-non-streaming response; `POST /v1/completions` forwards streaming SSE bytes
-without decoding model output. Both return a generic `502` with the trace ID on
-failure. Set `INFERENCE_BACKEND_API_KEY` through a secret when auth is required.
-The key, prompt, output, endpoint URL, and upstream error stay out of audit and
-trace records.
-
-```powershell
-$env:INFERENCE_BACKEND_COMPLETIONS_URL = "http://localhost:8001/v1"
-$env:INFERENCE_BACKEND_TIMEOUT_MS = "5000"
-python -m uvicorn gateway.app:app --port 8000
-```
-
-The same configuration enables `POST /v1/completions`. That route accepts a
-bounded OpenAI-compatible completion body, applies the normal authentication,
-authorization, request limit, input-token budget, audit, metric, and trace path,
-then passes streaming SSE bytes through without decoding model output in the
-gateway. Backend connections use one process-wide pool. A missing or failing
-backend returns a generic `502` without exposing the upstream URL or error.
-
-## Real vLLM benchmark
-
-See [`bench/README.md`](bench/README.md) for the end-to-end benchmark. It uses
-the upstream `vllm bench serve` client to compare the same seeded token workloads
-directly against vLLM and through the full gateway at concurrency 1 through 64.
-Every run saves environment metadata, raw request samples, condition aggregates,
-resource samples, Redis limiter latency, a Markdown report, and engineering SVG
-plots. The checked RTX 5070 Ti / Qwen2.5-3B run completed 3,000 measured requests
-with zero failures. At the predeclared medium workload and concurrency 8, the
-full gateway observed 103.83% of direct-vLLM request throughput across 60
-requests per path (101.37% to 108.94% across paired repetitions). This is an
-observed no-throughput-loss result, not a speedup claim; serving-runtime drift
-prevented a defensible positive latency-overhead estimate. See the
-[`measured report`](bench/results/20260803T212059Z-rtx5070ti-qwen25-3b-vllm026/report.md)
-and [`validation note`](bench/results/20260803T212059Z-rtx5070ti-qwen25-3b-vllm026/VALIDATION.md).
-
-## Test
-
-```bash
-python -m unittest discover -s tests
-```
-
-## Next steps
-
-- Replace local HS256 tokens with JWKS-backed OIDC key rotation.
-- Run the live Redis atomicity and two-replica correctness profiles on every
-  supported deployment target and keep Envoy descriptor parity checked.
-- Replace synthetic capacity and resilience inputs with measured backend telemetry.
-- Repeat the real vLLM matrix on additional authorized GPU/model configurations
-  before drawing hardware-general conclusions.
-- Add policy-as-code examples, redaction controls, and negative authorization tests.
-- Add CI supply-chain evidence: SBOM, dependency scanning, container scanning.
-- Capture a telemetry-correlation snapshot after each explicitly authorized
-  endpoint probe, then review it before replacing synthetic capacity inputs.
+- [Reference: setup, modes and evidence](docs/REFERENCE.md)
+- [Architecture](ARCHITECTURE.md)
+- [Threat model](THREAT_MODEL.md)
+- [Operations](docs/OPERATIONS.md)
+- [Benchmark method](bench/README.md)
