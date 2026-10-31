@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -33,10 +34,14 @@ def response_with_body(body: bytes, content_type: str) -> httpx.Response:
 class CompletionProxyTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmpdir = tempfile.TemporaryDirectory()
+        self.old_auth_settings = app_module.auth_settings
         self.old_audit_sink = app_module.audit_sink
         self.old_metrics = app_module.metrics
         self.old_rate_limiter = app_module.rate_limiter
         self.old_token_budget_limiter = app_module.token_budget_limiter
+        app_module.auth_settings = replace(
+            app_module.auth_settings, allow_demo_principals=True
+        )
         app_module.audit_sink = JsonlAuditSink(
             str(Path(self.tmpdir.name) / "audit.jsonl")
         )
@@ -47,6 +52,7 @@ class CompletionProxyTest(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.client.close()
+        app_module.auth_settings = self.old_auth_settings
         app_module.audit_sink = self.old_audit_sink
         app_module.metrics = self.old_metrics
         app_module.rate_limiter = self.old_rate_limiter
