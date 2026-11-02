@@ -5,7 +5,7 @@ import json
 import time
 import unittest
 
-from gateway.identity import AuthSettings, resolve_principal
+from gateway.identity import AuthSettings, ResolvedPrincipal, resolve_principal
 
 
 class IdentityTest(unittest.TestCase):
@@ -91,6 +91,41 @@ class IdentityTest(unittest.TestCase):
 
         self.assertIsNone(resolved.principal)
         self.assertEqual(resolved.failure_reason, "demo principals disabled")
+
+
+class TokenLifetimeTest(unittest.TestCase):
+    settings = AuthSettings(
+        jwt_issuer="https://issuer.example",
+        jwt_audience="gateway",
+        jwt_hs256_secret="secret",
+        max_token_lifetime_seconds=3600,
+        clock_skew_seconds=0,
+    )
+    claims = {
+        "iss": "https://issuer.example",
+        "aud": "gateway",
+        "sub": "user-1",
+        "roles": ["analyst"],
+    }
+
+    def resolve(self, **extra: object) -> ResolvedPrincipal:
+        token = make_token({**self.claims, **extra}, "secret")
+        return resolve_principal(f"Bearer {token}", None, self.settings)
+
+    def test_rejects_token_without_expiry(self) -> None:
+        resolved = self.resolve()
+
+        self.assertIsNone(resolved.principal)
+        self.assertEqual(resolved.failure_reason, "missing expiry")
+
+    def test_rejects_token_that_outlives_the_limit(self) -> None:
+        resolved = self.resolve(exp=int(time.time()) + 7200)
+
+        self.assertIsNone(resolved.principal)
+        self.assertEqual(resolved.failure_reason, "token lifetime too long")
+
+    def test_accepts_token_inside_the_limit(self) -> None:
+        self.assertIsNotNone(self.resolve(exp=int(time.time()) + 600).principal)
 
 
 def make_token(payload: dict[str, object], secret: str) -> str:

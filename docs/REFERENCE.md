@@ -223,3 +223,14 @@ python -m unittest discover -s tests
 - Add CI supply-chain evidence: SBOM, dependency scanning, container scanning.
 - Capture a telemetry-correlation snapshot after each explicitly authorized
   endpoint probe, then review it before replacing synthetic capacity inputs.
+
+## Hardening settings
+
+| Variable | Default | Effect |
+|---|---|---|
+| `OIDC_MAX_TOKEN_LIFETIME_SECONDS` | `86400` | Rejects tokens that expire further out than this. Tokens with no `exp` are always rejected. |
+| `ANONYMOUS_DENIAL_AUDIT_PER_MINUTE` | `600` | Audit records per minute for callers who never authenticated. The rest increment `security_gateway_audit_suppressed_total`. |
+| `METRICS_BEARER_TOKEN` | unset | When set, `/metrics` requires this bearer token. When unset, keep `/metrics` on an internal network. |
+| `ENABLE_API_DOCS` | `false` | Serves `/docs`, `/redoc` and `/openapi.json`. The local compose stack turns this on. |
+
+`/v1/models` requires an authenticated caller.

@@ -51,15 +51,19 @@ setup, Redis mode, the vLLM path, Grafana and Kubernetes, is in the
 
 ## Design decisions
 
-1. **Fail closed.** Demo identities are off by default, an unknown caller is denied,
-   and a gateway configured for Redis refuses to start if Redis is unreachable. A
-   Kubernetes smoke test in CI confirms that a demo request is denied in the deployed
-   manifest.
+1. **Fail closed.** Demo identities are off by default, tokens must expire, an unknown
+   caller is denied, and a gateway configured for Redis refuses to start if Redis is
+   unreachable. A Kubernetes smoke test in CI confirms that a demo request is denied in
+   the deployed manifest.
 2. **Check, then count, atomically.** The Redis limiter is one Lua script, so replicas
    cannot race between reading and incrementing. A denied request spends nothing, so
    it cannot block later requests that fit. CI runs this on real Redis.
-3. **Record decisions, not content.** Audit events and traces hold who, which model and
-   why, never the prompt, output or access reason. Principal IDs are hashed in Redis keys.
+3. **Record decisions, not content.** Audit events hold who, which model, the decision and
+   the stated access reason, never the prompt or output. Traces also leave out the reason.
+   Principal IDs are hashed in Redis keys.
+4. **Bound what anonymous callers can cost.** Denied requests need no credentials, so they
+   cannot create metric labels, and past 600 a minute they are counted instead of written
+   to the audit log. Authenticated denials are always written.
 
 ## Limitations
 
