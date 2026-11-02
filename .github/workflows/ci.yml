@@ -26,9 +26,8 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
 
@@ -49,7 +48,7 @@ jobs:
         run: python -c "from gateway.app import app; print(app.title)"
 
       - name: Create disposable Kubernetes cluster
-        uses: helm/kind-action@v1.15.1
+        uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
         with:
           version: v0.33.0
           cluster_name: gateway-smoke
