@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import hmac
+import os
 from dataclasses import dataclass
 from time import perf_counter, time_ns
-from typing import Iterator
+from typing import Annotated, Iterator
 
 import httpx
-from fastapi import FastAPI, Header, HTTPException, Response
+from fastapi import FastAPI, Header, HTTPException, Path, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from gateway.audit import JsonlAuditSink
+from gateway.audit import DenialAuditBudget, JsonlAuditSink
 from gateway.backend_adapter import (
     BackendAdapterError,
     open_completion_response,
@@ -85,10 +87,18 @@ class CompletionAdmission:
     token_limiter_ms: float
 
 
+UNKNOWN_MODEL_LABEL = "unknown"
+MAX_MODEL_ID_LENGTH = 200
+
+docs_enabled = os.getenv("ENABLE_API_DOCS", "false").strip().lower() == "true"
+
 app = FastAPI(
     title="Secure GPU Inference Gateway",
     version="0.1.0",
     description="AI inference security gateway.",
+    docs_url="/docs" if docs_enabled else None,
+    redoc_url="/redoc" if docs_enabled else None,
+    openapi_url="/openapi.json" if docs_enabled else None,
 )
 
 rate_limiter, token_budget_limiter = build_limiters_from_env()
@@ -96,6 +106,9 @@ audit_sink = JsonlAuditSink()
 metrics = GatewayMetrics()
 auth_settings = AuthSettings.from_env()
 trace_exporter = build_trace_exporter_from_env()
+anonymous_denial_budget = DenialAuditBudget(
+    int(os.getenv("ANONYMOUS_DENIAL_AUDIT_PER_MINUTE", "600"))
+)
 
 
 @app.get("/health")
@@ -104,7 +117,15 @@ def health() -> dict[str, str]:
 
 
 @app.get("/metrics")
-def prometheus_metrics() -> Response:
+def prometheus_metrics(
+    authorization: str | None = Header(default=None),
+) -> Response:
+    expected = os.getenv("METRICS_BEARER_TOKEN")
+    if expected and not hmac.compare_digest(
+        (authorization or "").encode("utf-8"),
+        f"Bearer {expected}".encode("utf-8"),
+    ):
+        raise HTTPException(status_code=401, detail={"reason": "metrics token required"})
     return Response(
         metrics.render_prometheus(MODEL_POLICIES),
         media_type="text/plain; version=0.0.4; charset=utf-8",
@@ -112,7 +133,17 @@ def prometheus_metrics() -> Response:
 
 
 @app.get("/v1/models")
-def list_models() -> list[dict[str, object]]:
+def list_models(
+    authorization: str | None = Header(default=None),
+    x_principal_id: str | None = Header(default=None),
+) -> list[dict[str, object]]:
+    resolved = resolve_principal(authorization, x_principal_id, auth_settings)
+    metrics.record_auth_event(
+        resolved.auth_method,
+        "accepted" if resolved.principal else "failed",
+    )
+    if resolved.principal is None:
+        raise HTTPException(status_code=401, detail={"reason": "authentication required"})
     return [
         {
             "model_id": policy.model_id,
@@ -128,7 +159,7 @@ def list_models() -> list[dict[str, object]]:
 
 @app.post("/v1/infer/{model_id}", response_model=InferenceResponse)
 def infer(
-    model_id: str,
+    model_id: Annotated[str, Path(max_length=MAX_MODEL_ID_LENGTH)],
     request: InferenceRequest,
     response: Response,
     x_principal_id: str | None = Header(default=None),
@@ -153,31 +184,33 @@ def infer(
     )
 
     if not decision.allowed:
-        metrics.record_request(model_id, "policy_denied", decision_reasons)
-        metrics.record_input_tokens(model_id, "policy_denied", estimated_input_tokens)
-        audit_sink.write(
-            audit_event(
-                resolved,
+        metric_model = metric_model_label(model_id)
+        metrics.record_request(metric_model, "policy_denied", decision_reasons)
+        metrics.record_input_tokens(metric_model, "policy_denied", estimated_input_tokens)
+        if denial_is_recorded(resolved):
+            audit_sink.write(
+                audit_event(
+                    resolved,
+                    trace,
+                    model_id=model_id,
+                    allowed=False,
+                    reason=request.reason,
+                    decision_reasons=decision_reasons,
+                    estimated_input_tokens=estimated_input_tokens,
+                    token_budget_limit=token_budget_limit,
+                )
+            )
+            export_trace_span(
                 trace,
                 model_id=model_id,
-                allowed=False,
-                reason=request.reason,
+                outcome="policy_denied",
+                auth_method=resolved.auth_method,
                 decision_reasons=decision_reasons,
+                latency_ms=None,
                 estimated_input_tokens=estimated_input_tokens,
                 token_budget_limit=token_budget_limit,
+                started_at_unix_nano=started_at_unix_nano,
             )
-        )
-        export_trace_span(
-            trace,
-            model_id=model_id,
-            outcome="policy_denied",
-            auth_method=resolved.auth_method,
-            decision_reasons=decision_reasons,
-            latency_ms=None,
-            estimated_input_tokens=estimated_input_tokens,
-            token_budget_limit=token_budget_limit,
-            started_at_unix_nano=started_at_unix_nano,
-        )
         raise HTTPException(
             status_code=403,
             detail={"reasons": decision_reasons, "trace_id": trace.trace_id},
@@ -704,10 +737,13 @@ def record_completion_event_fields(
     latency_ms: float | None,
     started_at_unix_nano: int,
 ) -> None:
-    metrics.record_request(model_id, outcome, decision_reasons)
-    metrics.record_input_tokens(model_id, outcome, estimated_input_tokens)
+    metric_model = metric_model_label(model_id)
+    metrics.record_request(metric_model, outcome, decision_reasons)
+    metrics.record_input_tokens(metric_model, outcome, estimated_input_tokens)
     if outcome == "allowed" and latency_ms is not None:
-        metrics.observe_latency(model_id, latency_ms / 1000)
+        metrics.observe_latency(metric_model, latency_ms / 1000)
+    if not allowed and not denial_is_recorded(resolved):
+        return
     audit_sink.write(
         audit_event(
             resolved,
@@ -733,6 +769,18 @@ def record_completion_event_fields(
         started_at_unix_nano=started_at_unix_nano,
         route="/v1/completions",
     )
+
+
+def metric_model_label(model_id: str) -> str:
+    """Keep caller-supplied names out of metric labels, which never shrink."""
+    return model_id if model_id in MODEL_POLICIES else UNKNOWN_MODEL_LABEL
+
+
+def denial_is_recorded(resolved: ResolvedPrincipal) -> bool:
+    if resolved.principal is not None or anonymous_denial_budget.allow():
+        return True
+    metrics.record_audit_suppressed()
+    return False
 
 
 def export_trace_span(

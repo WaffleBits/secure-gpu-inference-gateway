@@ -38,6 +38,7 @@ class GatewayMetrics:
         self.limiter_latency_buckets = tuple(sorted(limiter_latency_buckets))
         self._requests: Counter[tuple[str, str]] = Counter()
         self._denials: Counter[tuple[str, str]] = Counter()
+        self._audit_suppressed = 0
         self._auth_events: Counter[tuple[str, str]] = Counter()
         self._input_tokens: Counter[tuple[str, str]] = Counter()
         self._latency_buckets: Counter[tuple[str, float]] = Counter()
@@ -60,6 +61,10 @@ class GatewayMetrics:
                 reasons = denial_reasons or ("unspecified",)
                 for reason in reasons:
                     self._denials[(model_id, reason)] += 1
+
+    def record_audit_suppressed(self) -> None:
+        with self._lock:
+            self._audit_suppressed += 1
 
     def record_auth_event(self, auth_method: str, outcome: str) -> None:
         with self._lock:
@@ -102,6 +107,7 @@ class GatewayMetrics:
                 *self._latency_samples(),
                 *self._limiter_latency_samples(),
             ]
+            audit_suppressed = self._audit_suppressed
 
         sections = [
             "# HELP security_gateway_model_policy_info Configured model policy metadata.",
@@ -125,6 +131,9 @@ class GatewayMetrics:
                 for sample in samples
                 if sample.name == "security_gateway_denials_total"
             ),
+            "# HELP security_gateway_audit_suppressed_total Unauthenticated denials not written to the audit log.",
+            "# TYPE security_gateway_audit_suppressed_total counter",
+            f"security_gateway_audit_suppressed_total {audit_suppressed}",
             "# HELP security_gateway_auth_events_total Authentication attempts by method and outcome.",
             "# TYPE security_gateway_auth_events_total counter",
             *format_samples(

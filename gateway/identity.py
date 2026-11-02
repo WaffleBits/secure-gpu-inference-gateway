@@ -26,6 +26,7 @@ class AuthSettings:
     scopes_claim: str = "scope"
     allow_demo_principals: bool = False
     clock_skew_seconds: int = 60
+    max_token_lifetime_seconds: int = 86400
 
     @classmethod
     def from_env(cls) -> AuthSettings:
@@ -37,6 +38,9 @@ class AuthSettings:
             scopes_claim=os.getenv("OIDC_SCOPES_CLAIM", "scope"),
             allow_demo_principals=_parse_bool(os.getenv("ALLOW_DEMO_PRINCIPALS"), False),
             clock_skew_seconds=int(os.getenv("OIDC_CLOCK_SKEW_SECONDS", "60")),
+            max_token_lifetime_seconds=int(
+                os.getenv("OIDC_MAX_TOKEN_LIFETIME_SECONDS", "86400")
+            ),
         )
 
 
@@ -182,8 +186,13 @@ def _validate_claims(
 
     skew = settings.clock_skew_seconds
     exp = claims.get("exp")
-    if exp is not None and _numeric_date(exp, "exp") + skew < now:
+    if exp is None:
+        raise AuthenticationError("missing expiry")
+    expires_at = _numeric_date(exp, "exp")
+    if expires_at + skew < now:
         raise AuthenticationError("token expired")
+    if expires_at - now > settings.max_token_lifetime_seconds + skew:
+        raise AuthenticationError("token lifetime too long")
 
     nbf = claims.get("nbf")
     if nbf is not None and _numeric_date(nbf, "nbf") - skew > now:
